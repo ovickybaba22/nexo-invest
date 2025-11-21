@@ -41,6 +41,7 @@ Visit `http://localhost:8000`.
 `QUEUE_CONNECTION` – defaults to `database`. Ensure `php artisan queue:work` runs anywhere email/IPN jobs are dispatched.  
 `MAIL_*` – configure your SMTP provider before production.  
 `NOWPAYMENTS_API_KEY`, `NOWPAYMENTS_IPN_KEY`, `NOWPAYMENTS_IPN_URL` – required for the crypto deposit flow.  
+`NOWPAYMENTS_ALLOWED_CURRENCIES` – comma-separated fiat currencies you want to expose in the deposit form (defaults to `USD,EUR,GBP,BTC,ETH,USDT,USDC`).  
 `APP_URL` should match the public HTTPS domain (TradingView + NOWPayments verify this value).
 
 After editing env vars run:
@@ -57,7 +58,15 @@ php artisan optimize:clear
   * * * * * php /var/www/nexo-invest/artisan schedule:run >> /dev/null 2>&1
   ```
 
-- **Queue worker** – run `php artisan queue:work --tries=3` under a supervisor so deposit emails and withdrawal notifications send reliably.
+- **Queue worker** – run `php artisan queue:work --tries=3` under a supervisor so deposit emails and withdrawal notifications send reliably.  
+  A ready-to-copy sample is available in `deploy/supervisor/nexo-queue.conf`:
+
+  ```bash
+  sudo cp deploy/supervisor/nexo-queue.conf /etc/supervisor/conf.d/nexo-queue.conf
+  sudo supervisorctl reread
+  sudo supervisorctl update
+  sudo supervisorctl start nexo_queue:*
+  ```
 
 ## Building for production
 

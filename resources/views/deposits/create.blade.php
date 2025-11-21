@@ -43,12 +43,26 @@
                         </div>
 
                         @php
-                            $currencyOptions = [
-                                'usd' => 'US Dollar (USD)',
-                                'eur' => 'Euro (EUR)',
-                                'gbp' => 'British Pound (GBP)',
+                            $currencyCodes = collect(config('services.nowpayments.allowed_currencies', ['USD', 'EUR', 'GBP']))
+                                ->filter()
+                                ->map(fn ($code) => strtoupper($code))
+                                ->unique()
+                                ->values();
+
+                            $prettyNames = [
+                                'USD' => 'US Dollar (USD)',
+                                'EUR' => 'Euro (EUR)',
+                                'GBP' => 'British Pound (GBP)',
+                                'BTC' => 'Bitcoin (BTC)',
+                                'ETH' => 'Ethereum (ETH)',
+                                'USDT' => 'Tether (USDT)',
+                                'USDC' => 'USD Coin (USDC)',
                             ];
-                            $selectedCurrency = strtolower(old('currency', 'usd'));
+
+                            $currencyOptions = $currencyCodes->mapWithKeys(function ($code) use ($prettyNames) {
+                                return [strtolower($code) => $prettyNames[$code] ?? $code];
+                            });
+                            $selectedCurrency = strtolower(old('currency', $currencyOptions->keys()->first() ?? 'usd'));
                         @endphp
 
                         <div>
@@ -66,6 +80,9 @@
                                     </option>
                                 @endforeach
                             </select>
+                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                Supported settlement currencies mirror the NOWPayments configuration for this project.
+                            </p>
                             @error('currency')
                                 <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
                             @enderror

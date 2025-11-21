@@ -5,8 +5,9 @@
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                     Investment plans
                 </h2>
+
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Choose a strategy that matches your risk profile and funding level.
+                    Choose a strategy that aligns with your funding level and time horizon.
                 </p>
             </div>
 
@@ -27,12 +28,18 @@
                         <div class="border border-gray-100 dark:border-gray-700 rounded-xl p-5
                                     hover:border-indigo-500/60 hover:shadow-md transition-all">
                             <div class="flex items-start justify-between">
+                                @php
+                                    $targetRoi = $plan->target_roi_percent;
+                                    $targetRoiLabel = is_null($targetRoi)
+                                        ? 'ROI disclosed on request'
+                                        : 'Target ROI '.number_format($targetRoi, 2).'%';
+                                @endphp
                                 <div>
                                     <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">
                                         {{ $plan->name }}
                                     </h3>
                                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                        {{ $plan->risk_label ?? 'Core risk' }} • Target ROI {{ number_format($plan->target_roi_percent, 2) }}%
+                                        {{ ucfirst($plan->category ?? 'daily') }} programme • {{ $targetRoiLabel }}
                                     </p>
                                 </div>
                                 <span class="inline-flex items-center rounded-full px-2.5 py-0.5
@@ -42,11 +49,17 @@
                                 </span>
                             </div>
 
+                            @php
+                                $minDepositCents = $plan->min_deposit_cents ?? $plan->min_deposit;
+                                $minDepositLabel = $minDepositCents
+                                    ? '$'.number_format($minDepositCents / 100, 2)
+                                    : 'Tailored minimum';
+                            @endphp
                             <dl class="mt-4 space-y-2 text-xs text-gray-500 dark:text-gray-400">
                                 <div class="flex justify-between">
                                     <dt>Minimum deposit</dt>
                                     <dd class="font-semibold text-gray-900 dark:text-gray-100">
-                                        ${{ number_format(($plan->min_deposit_cents ?? $plan->min_deposit ?? 0) / 100, 2) }}
+                                        {{ $minDepositLabel }}
                                     </dd>
                                 </div>
                                 @if (! empty($plan->description))

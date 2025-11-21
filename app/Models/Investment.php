@@ -15,19 +15,29 @@ class Investment extends Model
         'plan_id',
         'amount_cents',
         'months',
+        'accrued_profit_cents',
         'target_roi_percent',
         'expected_payout_cents',
         'started_at',
         'status',
+        'last_yield_at',
+        'next_yield_at',
+        'last_payout_at',
+        'next_payout_at',
     ];
 
     protected $casts = [
         'amount_cents'         => 'integer',
+        'accrued_profit_cents' => 'integer',
         'expected_payout_cents'=> 'integer',
         'months'               => 'integer',
         'target_roi_percent'   => 'float',
         'started_at'           => 'datetime',
         'last_profit_date'     => 'date',
+        'last_yield_at'        => 'datetime',
+        'next_yield_at'        => 'datetime',
+        'last_payout_at'       => 'datetime',
+        'next_payout_at'       => 'datetime',
     ];
 
     // Relationships
@@ -51,6 +61,53 @@ class Investment extends Model
     public function getExpectedPayoutDollarsAttribute(): float
     {
         return $this->expected_payout_cents / 100;
+    }
+
+    public function getAccruedProfitDollarsAttribute(): float
+    {
+        return ($this->accrued_profit_cents ?? 0) / 100;
+    }
+
+    public function needsYieldProcessing(string $cycle, Carbon $now): bool
+    {
+        $last = $this->last_payout_at ?? $this->last_yield_at;
+
+        if (! $last instanceof Carbon) {
+            $last = $last ? Carbon::parse($last) : null;
+        }
+
+        if (! $last) {
+            return true;
+        }
+
+        return match ($cycle) {
+            'weekly' => $last->diffInDays($now) >= 7,
+            'apy'    => $last->diffInDays($now) >= 30,
+            default  => $last->lt($now->copy()->startOfDay()),
+        };
+    }
+
+    public function cycleRate(string $cycle): float
+    {
+        $plan = $this->plan;
+        if (! $plan) {
+            return 0.0;
+        }
+
+        return match ($cycle) {
+            'weekly' => (float) ($plan->roi_value ?? 0) / 100,
+            'apy'    => (float) ($plan->apy_value ?? $plan->roi_value ?? 0) / 100 / 12,
+            default  => (float) ($plan->roi_value ?? 0) / 100,
+        };
+    }
+
+    public function nextCycleDate(Carbon $now, string $cycle): Carbon
+    {
+        return match ($cycle) {
+            'weekly' => $now->copy()->addWeek(),
+            'apy'    => $now->copy()->addMonth(),
+            default  => $now->copy()->addDay(),
+        };
     }
 
     /**

@@ -12,8 +12,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Daily profit engine – runs every night at 00:05
-        $schedule->command('investments:accrue-daily-profit')->dailyAt('00:05');
+        $schedule->command('investments:accrue-yield daily')->dailyAt('00:05');
+        $schedule->command('investments:accrue-yield weekly')->weeklyOn(1, '00:15');
+        $schedule->command('investments:accrue-yield apy')->monthlyOn(1, '00:30');
     }
 
     /**

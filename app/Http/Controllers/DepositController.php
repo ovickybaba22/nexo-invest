@@ -26,9 +26,15 @@ class DepositController extends Controller
         $amount = (float) $request->input('amount');
         $amountCents = (int) round($amount * 100);
         $currency = strtoupper($request->input('currency'));
-        $allowedCurrencies = ['USD', 'EUR', 'GBP'];
+        $allowedCurrencies = collect(config('services.nowpayments.allowed_currencies', ['USD', 'EUR', 'GBP']))
+            ->filter()
+            ->map(fn ($code) => strtoupper($code))
+            ->unique()
+            ->values()
+            ->all();
+
         if (! in_array($currency, $allowedCurrencies, true)) {
-            $currency = 'USD';
+            $currency = $allowedCurrencies[0] ?? 'USD';
         }
 
         // Create a local deposit record (adjust column names to match your schema)
@@ -68,7 +74,10 @@ class DepositController extends Controller
         $response = Http::withHeaders([
             'x-api-key' => $apiKey,
             'Content-Type' => 'application/json',
-        ])->post('https://api.nowpayments.io/v1/invoice', $payload);
+        ])->post(
+            rtrim(config('services.nowpayments.base_url', 'https://api.nowpayments.io/v1'), '/').'/invoice',
+            $payload
+        );
 
         if (! $response->ok()) {
             Log::error('NOWPayments invoice creation failed', [

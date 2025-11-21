@@ -22,7 +22,7 @@
   <meta name="twitter:image" content="{{ asset('img/og.jpg') }}" />
 
   <!-- Favicons -->
-  <link rel="icon" type="image/png" href="{{ asset('img/logo_white.png') }}" />
+  <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}" />
   <script type="application/ld+json">
   {
     "@@context":"https://schema.org",
@@ -216,7 +216,7 @@
           <div class="opacity-0 translate-y-6 transition-all duration-700 delay-150 rounded-xl border border-white/10 bg-white/5 p-6" data-animate>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500 text-black font-semibold">2</div>
             <h3 class="mt-4 font-semibold text-white">Choose a plan</h3>
-            <p class="mt-2 text-sm text-gray-300">Pick Core, Growth, or Balanced. Auto‑rebalancing keeps risk in check.</p>
+            <p class="mt-2 text-sm text-gray-300">Pick Core, Growth, or Balanced. Auto‑rebalancing keeps allocations in sync.</p>
           </div>
           <div class="opacity-0 translate-y-6 transition-all duration-700 delay-300 rounded-xl border border-white/10 bg-white/5 p-6" data-animate>
             <div class="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500 text-black font-semibold">3</div>
@@ -238,7 +238,7 @@
         <div class="mt-8 grid gap-6 md:grid-cols-3">
           <!-- Core Income -->
           <article class="opacity-0 translate-y-6 transition-all duration-700 rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 p-6" data-animate>
-            <div class="text-xs text-gray-300">Risk: Low</div>
+            <div class="text-xs text-gray-300">Program tier: Core Income</div>
             <h3 class="mt-2 text-xl font-semibold text-white">Core Income</h3>
             <div class="mt-3 text-4xl font-extrabold text-white">7.0% <span class="text-base font-semibold text-gray-300">APY</span></div>
             <ul class="mt-4 space-y-2 text-sm text-gray-300">
@@ -250,7 +250,7 @@
           </article>
           <!-- Growth -->
           <article class="opacity-0 translate-y-6 transition-all duration-700 delay-150 rounded-2xl border border-white/10 bg-gradient-to-br from-cyan-500/10 to-white/0 p-6" data-animate>
-            <div class="text-xs text-gray-300">Risk: Medium</div>
+            <div class="text-xs text-gray-300">Program tier: Growth</div>
             <h3 class="mt-2 text-xl font-semibold text-white">Growth</h3>
             <div class="mt-3 text-4xl font-extrabold text-white">10.8% <span class="text-base font-semibold text-gray-300">APY</span></div>
             <ul class="mt-4 space-y-2 text-sm text-gray-300">
@@ -262,7 +262,7 @@
           </article>
           <!-- Balanced -->
           <article class="opacity-0 translate-y-6 transition-all duration-700 delay-300 rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/10 to-white/0 p-6" data-animate>
-            <div class="text-xs text-gray-300">Risk: Balanced</div>
+            <div class="text-xs text-gray-300">Program tier: Balanced</div>
             <h3 class="mt-2 text-xl font-semibold text-white">Balanced</h3>
             <div class="mt-3 text-4xl font-extrabold text-white">8.9% <span class="text-base font-semibold text-gray-300">APY</span></div>
             <ul class="mt-4 space-y-2 text-sm text-gray-300">
@@ -300,55 +300,102 @@
       </div>
     </section>
     @php
-      $calculatorPlans = isset($plans) ? $plans->take(5) : collect();
+      $plansCollection = $plans ?? collect();
+      $categoryMeta = [
+        'daily' => [
+          'eyebrow' => 'Daily Yield Plans',
+          'title'   => 'Nexo Daily Yield',
+          'copy'    => 'Short-duration allocations with wallet credits every single day.',
+        ],
+        'weekly' => [
+          'eyebrow' => 'Weekly Growth Plans',
+          'title'   => 'Nexo Weekly Growth',
+          'copy'    => 'Medium-term growth programmes with weekly compounding.',
+        ],
+        'apy' => [
+          'eyebrow' => 'Managed Portfolios',
+          'title'   => 'Nexo Managed Portfolios',
+          'copy'    => 'Institutional-style APY strategies with monthly distributions.',
+        ],
+      ];
+      $plansByCategory = $plansCollection->groupBy(fn ($plan) => $plan->category ?? 'daily');
+      $calculatorPlans = $plansCollection->map(function ($plan) {
+        $min = (int) ($plan->min_deposit_cents ?? $plan->min_deposit ?? 0);
+        $max = $plan->max_deposit_cents ?? $plan->max_deposit;
+
+        return [
+          'slug'        => $plan->slug,
+          'name'        => $plan->name,
+          'category'    => $plan->category ?? 'daily',
+          'roi_type'    => $plan->roi_type ?? 'daily',
+          'roi_value'   => (float) ($plan->roi_value ?? 0),
+          'apy_value'   => (float) ($plan->apy_value ?? $plan->target_roi_percent ?? $plan->roi_value ?? 0),
+          'min_deposit' => $min,
+          'max_deposit' => is_null($max) ? null : (int) $max,
+          'term_label'  => $plan->term_label ?? '',
+          'risk_label'  => $plan->risk_level ?? '',
+        ];
+      })->values();
     @endphp
-    <!-- ROI CALCULATOR (APY only, simplified) -->
+    <!-- ROI CALCULATOR -->
     <section id="calculator" class="bg-[#0b0f11] py-20">
       <div class="mx-auto max-w-7xl px-6">
-        <h2 class="text-2xl font-semibold text-white">Projected Earnings <span class="text-gray-400 text-base font-normal">(estimates)</span></h2>
-        <p class="mt-2 text-xs text-gray-400">Illustrative only — not guarantees. Capital is at risk. Outcomes vary with market conditions.</p>
+        <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 class="text-2xl font-semibold text-white">Projected Earnings <span class="text-gray-400 text-base font-normal">(live plans)</span></h2>
+            <p class="mt-2 text-xs text-gray-400">Illustrative forecast only. Credits compound per the selected plan cadence.</p>
+          </div>
+          <p class="text-xs text-gray-500 max-w-xl">Returns are targets, not guarantees. Capital is always at risk and subject to liquidity windows.</p>
+        </div>
 
-        <div class="mt-8 grid gap-6 md:grid-cols-2">
+        <div id="roiCalculator" data-plans='@json($calculatorPlans)' class="mt-8 grid gap-6 md:grid-cols-2">
           <div class="rounded-xl border border-white/10 bg-white/5 p-6">
-            <label class="text-sm text-gray-300">Amount ($)</label>
-            <input id="amt" type="range" min="1000" max="500000" step="1000" value="25000" class="mt-2 w-full accent-cyan-500" />
-            <div class="mt-1 text-xs text-gray-400"><span id="amtLabel">$25,000</span></div>
+            <div>
+              <label class="text-sm text-gray-300">Investment amount ($)</label>
+              <input id="calcAmount" type="range" min="500" max="200000" step="100" value="2500" class="mt-2 w-full accent-cyan-500" />
+              <div class="mt-1 text-xs text-gray-400"><span id="calcAmountLabel">$2,500</span></div>
+            </div>
 
-            <div class="mt-6 grid grid-cols-2 gap-4">
+            <div class="mt-6 grid gap-4 md:grid-cols-2">
               <div>
-                <label class="text-sm text-gray-300 flex items-center justify-between">
-                  <span>Months</span>
-                  <span class="text-gray-500 text-[11px]">1–60</span>
-                </label>
-                <input id="months" type="range" min="1" max="60" step="1" value="3" class="mt-2 w-full accent-cyan-500" />
-                <div class="mt-1 text-xs text-gray-400"><span id="monthsLabel">3</span> months</div>
+                <label class="text-sm text-gray-300">Plan family</label>
+                <select id="calcPlanType" class="mt-2 w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-sm text-white">
+                  <option value="daily">Daily yield</option>
+                  <option value="weekly">Weekly growth</option>
+                  <option value="apy">Managed portfolios</option>
+                </select>
               </div>
               <div>
                 <label class="text-sm text-gray-300">Plan</label>
-                <select id="apy" class="mt-2 w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-sm text-white">
-                  @forelse($calculatorPlans as $calcPlan)
-                    @php
-                      $apyValue = ($calcPlan->target_roi_percent ?? 0) / 100;
-                      $apyLabel = number_format($calcPlan->target_roi_percent ?? 0, 2);
-                    @endphp
-                    <option value="{{ $apyValue }}" {{ $loop->first ? 'selected' : '' }}>
-                      {{ $calcPlan->name }} ({{ $apyLabel }}% APY)
-                    </option>
-                  @empty
-                    <option value="0.2" selected>Growth (20% APY)</option>
-                    <option value="0.12">Balanced (12% APY)</option>
-                  @endforelse
-                </select>
+                <select id="calcPlan" class="mt-2 w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-sm text-white"></select>
               </div>
             </div>
+
+            <div class="mt-6">
+              <label class="text-sm text-gray-300 flex items-center justify-between">
+                <span>Duration (<span id="durationUnitLabel">days</span>)</span>
+                <span class="text-[11px] text-gray-500" id="durationRangeHint">7–180</span>
+              </label>
+              <input id="duration" type="range" min="7" max="180" step="1" value="30" class="mt-2 w-full accent-cyan-500" />
+              <div class="mt-1 text-xs text-gray-400"><span id="durationLabel">30</span> <span id="durationUnitLabelClone">days</span></div>
+            </div>
+
+            <p class="mt-6 text-xs text-gray-400" id="planRangeHint">Select a plan to view allocation range.</p>
           </div>
 
           <div class="rounded-xl border border-white/10 bg-white/5 p-6">
-            <div class="text-sm text-gray-300">Result</div>
-            <div class="mt-3 text-3xl font-extrabold text-white" id="final">$26,813</div>
-            <div class="mt-1 text-emerald-400" id="earnings">+ $1,813 earnings</div>
-            <div class="mt-6 text-xs text-gray-400">Formula: P × (1 + APY/12)<sup>months</sup></div>
-            <a href="{{ route('register') }}" class="mt-6 inline-block rounded-md bg-cyan-500 px-4 py-2 font-semibold text-black hover:bg-cyan-400">Open account</a>
+            <div class="text-sm text-gray-300">Projection</div>
+            <div class="mt-4 text-3xl font-extrabold text-white" id="final">$0</div>
+            <div class="mt-1 text-lg text-emerald-400" id="earnings">+ $0 projected profit</div>
+            <div class="mt-2 text-xs text-gray-400" id="effectiveApy">Annualized ~0%</div>
+
+            <div class="mt-6 rounded-xl border border-white/10 bg-black/30 p-4 text-xs text-gray-400">
+              <div class="text-gray-200 font-semibold">Formula</div>
+              <p class="mt-2 text-gray-400" id="formulaHint">P × (1 + rate)^cycles</p>
+            </div>
+
+            <p class="mt-6 text-xs text-gray-500">For illustration only. Always review plan documents for liquidity windows and payout cadence.</p>
+            <a href="{{ route('register') }}" class="mt-4 inline-flex items-center justify-center rounded-md bg-cyan-500 px-4 py-2 font-semibold text-black hover:bg-cyan-400">Create account</a>
           </div>
         </div>
       </div>
@@ -358,71 +405,127 @@
     <section id="plans" class="bg-[#0b0f11] pb-24">
       <div class="mx-auto max-w-7xl px-6">
         @php
-          $money = fn($v) => is_null($v) ? '—' : '$'.number_format(((float)$v)/100, 0);
-          $pct   = fn($v) => rtrim(rtrim(number_format((float)$v, 2, '.', ''), '0'), '.').'%';
-          $plansCollection = isset($plans) ? $plans : collect();
+          $money = fn($value) => '$'.number_format(((float) $value) / 100, 0);
+          $pct   = fn($value) => rtrim(rtrim(number_format((float) $value, 2, '.', ''), '0'), '.').'%';
         @endphp
 
-        @if(isset($plans) && count($plans))
-          <div class="grid gap-6 md:grid-cols-2">
-            @foreach($plans as $plan)
-              <article class="rounded-2xl border border-white/10 bg-[#050a13] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.65)]">
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">{{ $plan->risk_level ?? 'Core' }}</p>
-                    <h3 class="mt-1 text-xl font-semibold text-white">{{ $plan->name }}</h3>
-                    <p class="mt-2 text-sm text-gray-300">{{ $plan->description }}</p>
-                  </div>
-                  <span class="inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-[11px] text-cyan-200">
-                    Target ROI {{ $pct($plan->target_roi_percent) }}
-                  </span>
-                </div>
-
-                <dl class="mt-5 space-y-2 text-sm text-gray-300">
-                  <div class="flex justify-between">
-                    <dt>Minimum deposit</dt>
-                    <dd class="font-semibold text-white">${{ number_format(($plan->min_deposit_cents ?? $plan->min_deposit ?? 0) / 100, 2) }}</dd>
-                  </div>
-                  <div class="flex justify-between">
-                    <dt>Maximum deposit</dt>
-                    @php $maxDep = is_null($plan->max_deposit) ? 'No max' : '$'.number_format(($plan->max_deposit ?? 0)/100, 2); @endphp
-                    <dd class="font-semibold text-white">{{ $maxDep }}</dd>
-                  </div>
-                  <div class="flex justify-between">
-                    <dt>Term</dt>
-                    <dd class="font-semibold text-white">{{ $plan->min_months }}–{{ $plan->max_months ?? '∞' }} months</dd>
-                  </div>
-                </dl>
-
-                <ul class="mt-4 space-y-2 text-sm text-gray-300">
-                  @php $features = is_array($plan->features) ? $plan->features : []; @endphp
-                  @forelse($features as $f)
-                    <li class="flex items-center gap-2">
-                      <span class="h-[6px] w-[6px] rounded-full bg-cyan-400"></span>
-                      <span>{{ is_array($f) ? ($f['value'] ?? '') : $f }}</span>
-                    </li>
-                  @empty
-                    <li class="flex items-center gap-2 text-gray-500">
-                      <span class="h-[6px] w-[6px] rounded-full bg-white/20"></span>
-                      <span>No features listed.</span>
-                    </li>
-                  @endforelse
-                </ul>
-
-                <div class="mt-6 flex items-center justify-between">
-                  <a href="{{ route('invest.start', $plan->slug) }}"
-                     class="inline-flex items-center justify-center rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-cyan-300">
-                    Start investment
-                  </a>
-                  <a href="{{ route('plans.index') }}" class="text-xs text-gray-400 hover:text-white">
-                    View full details →
-                  </a>
-                </div>
-              </article>
-            @endforeach
-          </div>
+        @if($plansCollection->isEmpty())
+          <p class="text-gray-400">Plans are being configured. Check back soon.</p>
         @else
-          <p class="text-gray-400">No plans available yet — check back soon.</p>
+          @foreach($categoryMeta as $category => $meta)
+            @php $categoryPlans = $plansByCategory->get($category); @endphp
+            @if($categoryPlans && $categoryPlans->count())
+              <div class="{{ !$loop->first ? 'mt-14' : '' }}">
+              <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p class="text-[11px] uppercase tracking-[0.3em] text-cyan-300">{{ $meta['eyebrow'] }}</p>
+                  <h3 class="mt-2 text-2xl font-semibold text-white">{{ $meta['title'] }}</h3>
+                  <p class="mt-2 text-sm text-gray-400">{{ $meta['copy'] }}</p>
+                </div>
+                <a href="{{ route('plans.index') }}" class="inline-flex items-center justify-center rounded-full border border-white/15 px-4 py-2 text-xs uppercase tracking-[0.2em] text-gray-200 hover:text-white">
+                  View plan matrix
+                </a>
+              </div>
+
+              <div class="mt-6 grid gap-6 md:grid-cols-2">
+                @foreach($categoryPlans as $plan)
+                  @php
+                    $minDeposit = $plan->min_deposit_cents ?? $plan->min_deposit ?? 0;
+                    $maxDeposit = $plan->max_deposit_cents ?? $plan->max_deposit;
+                    $features = is_array($plan->features) ? $plan->features : [];
+                    $roiLabel = $plan->roi_type === 'apy'
+                      ? 'APY (monthly credit)'
+                      : 'per '.($plan->roi_type === 'weekly' ? 'week' : 'day');
+                    $accent = match($plan->category) {
+                      'weekly' => 'from-emerald-500/10',
+                      'apy'    => 'from-indigo-500/10',
+                      default  => 'from-cyan-500/10',
+                    };
+                    $iconBg = match($plan->category) {
+                      'weekly' => 'bg-emerald-500/25 text-emerald-200',
+                      'apy'    => 'bg-indigo-500/25 text-indigo-200',
+                      default  => 'bg-cyan-500/25 text-cyan-200',
+                    };
+                    $risk = $plan->risk_level ?? 'Premium';
+                    $displayRoi = $plan->roi_type === 'apy'
+                      ? $pct($plan->apy_value ?? $plan->roi_value ?? 0)
+                      : $pct($plan->roi_value ?? $plan->target_roi_percent ?? 0);
+                  @endphp
+                  <article class="rounded-2xl border border-white/10 bg-gradient-to-br {{ $accent }} to-transparent p-6 shadow-[0_24px_50px_rgba(0,0,0,0.55)]">
+                    <div class="flex flex-col gap-4">
+                      <div class="flex items-start justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                          <span class="h-12 w-12 rounded-2xl {{ $iconBg }} flex items-center justify-center text-lg font-semibold">
+                            {{ strtoupper(substr($plan->name, 6, 1)) }}
+                          </span>
+                          <div>
+                            <p class="text-xs text-gray-400 uppercase tracking-[0.3em]">{{ strtoupper($plan->display_category ?? $meta['title']) }}</p>
+                            <h4 class="mt-1 text-xl font-semibold text-white">{{ $plan->name }}</h4>
+                          </div>
+                        </div>
+                        <span class="inline-flex items-center rounded-full border border-white/20 px-2.5 py-0.5 text-[11px] text-gray-100">
+                          {{ $risk }}
+                        </span>
+                      </div>
+                      <p class="text-sm text-gray-300">{{ $plan->description }}</p>
+
+                      <div>
+                        <div class="inline-flex items-baseline gap-2">
+                          <span class="text-3xl font-bold text-white">{{ $displayRoi }}</span>
+                          <span class="text-sm text-gray-400">{{ $roiLabel }}</span>
+                        </div>
+                        @if($plan->term_label)
+                          <p class="text-xs text-gray-400">{{ $plan->term_label }}</p>
+                        @endif
+                      </div>
+                    </div>
+
+                    <dl class="mt-6 grid grid-cols-2 gap-4 text-sm text-gray-300">
+                      <div>
+                        <dt>Minimum</dt>
+                        <dd class="mt-1 font-semibold text-white">{{ $money($minDeposit) }}</dd>
+                      </div>
+                      <div>
+                        <dt>Maximum</dt>
+                        <dd class="mt-1 font-semibold text-white">{{ is_null($maxDeposit) ? 'No max' : $money($maxDeposit) }}</dd>
+                      </div>
+                      <div>
+                        <dt>Status</dt>
+                        <dd class="mt-1 font-semibold text-white">{{ $plan->is_active ? 'Open' : 'Waitlist' }}</dd>
+                      </div>
+                      <div>
+                        <dt>Distribution</dt>
+                        <dd class="mt-1 font-semibold text-white">{{ $plan->roi_type === 'weekly' ? 'Weekly' : ($plan->roi_type === 'apy' ? 'Monthly' : 'Daily') }}</dd>
+                      </div>
+                    </dl>
+
+                    <ul class="mt-5 space-y-2 text-sm text-gray-300">
+                      @forelse($features as $feature)
+                        <li class="flex items-center gap-2">
+                          <span class="h-[6px] w-[6px] rounded-full bg-cyan-400"></span>
+                          <span>{{ is_array($feature) ? ($feature['value'] ?? '') : $feature }}</span>
+                        </li>
+                      @empty
+                        <li class="flex items-center gap-2 text-gray-500">
+                          <span class="h-[6px] w-[6px] rounded-full bg-white/20"></span>
+                          <span>Premium monitoring & concierge onboarding.</span>
+                        </li>
+                      @endforelse
+                    </ul>
+
+                    <div class="mt-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <a href="{{ route('invest.start', $plan->slug) }}"
+                         class="inline-flex w-full items-center justify-center rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-cyan-300 md:w-auto">
+                        Start now
+                      </a>
+                      <span class="text-xs text-gray-400">Target yields only · Review docs before funding</span>
+                    </div>
+                  </article>
+                @endforeach
+              </div>
+            </div>
+            @endif
+          @endforeach
         @endif
       </div>
     </section>
@@ -605,10 +708,10 @@
             <span class="sr-only">Nexo Invest</span>
           </a>
           <nav class="flex flex-wrap gap-5 text-sm text-gray-300">
-            <a href="#why" class="hover:text-white">Personal</a>
-            <a href="#plans" class="hover:text-white">Business</a>
-            <a href="#markets" class="hover:text-white">Markets</a>
-            <a href="#security" class="hover:text-white">Company</a>
+            <a href="https://nexo.com/personal" class="hover:text-white" target="_blank" rel="noopener">Personal</a>
+            <a href="https://nexo.com/institutional" class="hover:text-white" target="_blank" rel="noopener">Business</a>
+            <a href="https://nexo.com/market-insights" class="hover:text-white" target="_blank" rel="noopener">Markets</a>
+            <a href="https://nexo.com/about" class="hover:text-white" target="_blank" rel="noopener">Company</a>
             <a href="{{ route('login') }}" class="rounded-md border border-white/15 px-3 py-1.5 hover:bg-white/10">Log in</a>
             <a href="{{ route('register') }}" class="rounded-md bg-white/90 px-3 py-1.5 font-medium text-black hover:bg-white">Sign up</a>
           </nav>
@@ -621,58 +724,58 @@
           <div>
             <h3 class="text-sm font-semibold text-white">Personal</h3>
             <ul class="mt-3 space-y-2 text-sm">
-              <li><a class="hover:text-white" href="#">Flexible Savings</a></li>
-              <li><a class="hover:text-white" href="#">Fixed-term Savings</a></li>
-              <li><a class="hover:text-white" href="#">Credit Line</a></li>
-              <li><a class="hover:text-white" href="#">Private Clients</a></li>
-              <li><a class="hover:text-white" href="#">Tax Reporting</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/earn-crypto" target="_blank" rel="noopener">Flexible Savings</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/fixed-terms" target="_blank" rel="noopener">Fixed-term Savings</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/credit-line" target="_blank" rel="noopener">Credit Line</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/private" target="_blank" rel="noopener">Private Clients</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/tax" target="_blank" rel="noopener">Tax Reporting</a></li>
             </ul>
           </div>
 
           <div>
             <h3 class="text-sm font-semibold text-white">Business</h3>
             <ul class="mt-3 space-y-2 text-sm">
-              <li><a class="hover:text-white" href="#">Corporates</a></li>
-              <li><a class="hover:text-white" href="#">Institutions</a></li>
-              <li><a class="hover:text-white" href="#">White Label</a></li>
-              <li><a class="hover:text-white" href="#">Ventures</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/institutional" target="_blank" rel="noopener">Corporates</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/institutional" target="_blank" rel="noopener">Institutions</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/ventures" target="_blank" rel="noopener">Ventures</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/nexo-prime" target="_blank" rel="noopener">Prime Brokerage</a></li>
             </ul>
           </div>
 
           <div>
             <h3 class="text-sm font-semibold text-white">Company</h3>
             <ul class="mt-3 space-y-2 text-sm">
-              <li><a class="hover:text-white" href="#">About</a></li>
-              <li><a class="hover:text-white" href="#">Security</a></li>
-              <li><a class="hover:text-white" href="#">Partnerships</a></li>
-              <li><a class="hover:text-white" href="#">News &amp; Insights</a></li>
-              <li><a class="hover:text-white" href="#">Help Center</a></li>
-              <li><a class="hover:text-white" href="#">Contacts</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/about" target="_blank" rel="noopener">About</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/security" target="_blank" rel="noopener">Security</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/partnerships" target="_blank" rel="noopener">Partnerships</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/blog" target="_blank" rel="noopener">News &amp; Insights</a></li>
+              <li><a class="hover:text-white" href="https://support.nexo.com" target="_blank" rel="noopener">Help Center</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/contact-us" target="_blank" rel="noopener">Contacts</a></li>
             </ul>
           </div>
 
           <div>
             <h3 class="text-sm font-semibold text-white">Legal</h3>
             <ul class="mt-3 space-y-2 text-sm">
-              <li><a class="hover:text-white" href="#">Privacy Policy</a></li>
-              <li><a class="hover:text-white" href="#">Cookies Policy</a></li>
-              <li><a class="hover:text-white" href="#">Exchange Terms</a></li>
-              <li><a class="hover:text-white" href="#">Services Terms</a></li>
-              <li><a class="hover:text-white" href="#">Staking Terms</a></li>
-              <li><a class="hover:text-white" href="#">Credit Terms</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/cookie-policy" target="_blank" rel="noopener">Cookies Policy</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/exchange-terms" target="_blank" rel="noopener">Exchange Terms</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/general-terms-and-conditions" target="_blank" rel="noopener">Services Terms</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/staking-terms" target="_blank" rel="noopener">Staking Terms</a></li>
+              <li><a class="hover:text-white" href="https://nexo.com/credit-line-terms" target="_blank" rel="noopener">Credit Terms</a></li>
             </ul>
           </div>
 
           <div>
             <h3 class="text-sm font-semibold text-white">Follow Nexo</h3>
             <div class="mt-3 flex gap-2">
-              <a href="#" class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/15 hover:bg-white/10" aria-label="X">
+              <a href="https://twitter.com/Nexo" target="_blank" rel="noopener" class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/15 hover:bg-white/10" aria-label="X">
                 <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor"><path d="M18.9 3H21l-6.5 7.4L22 21h-5.6l-4.4-5.7L6 21H3.9l6.9-7.8L2.5 3H8l4 5.3L18.9 3z"/></svg>
               </a>
-              <a href="#" class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/15 hover:bg-white/10" aria-label="YouTube">
+              <a href="https://www.youtube.com/@Nexo" target="_blank" rel="noopener" class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/15 hover:bg-white/10" aria-label="YouTube">
                 <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor"><path d="M23 7.1a4 4 0 0 0-2.8-2.8C18.4 3.8 12 3.8 12 3.8s-6.4 0-8.2.5A4 4 0 0 0 1 7.1 41.8 41.8 0 0 0 0 12a41.8 41.8 0 0 0 1 4.9 4 4 0 0 0 2.8 2.8c1.8.5 8.2.5 8.2.5s6.4 0 8.2-.5A4 4 0 0 0 23 16.9 41.8 41.8 0 0 0 24 12a41.8 41.8 0 0 0-1-4.9zM9.6 15.2V8.8L15.8 12l-6.2 3.2z"/></svg>
               </a>
-              <a href="#" class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/15 hover:bg-white/10" aria-label="Instagram">
+              <a href="https://www.instagram.com/nexo" target="_blank" rel="noopener" class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/15 hover:bg-white/10" aria-label="Instagram">
                 <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm5 5.8A4.2 4.2 0 1 0 16.2 12 4.2 4.2 0 0 0 12 7.8zm6-1.6a1.2 1.2 0 1 0 1.2 1.2A1.2 1.2 0 0 0 18 6.2zM12 9.2A2.8 2.8 0 1 1 9.2 12 2.8 2.8 0 0 1 12 9.2z"/></svg>
               </a>
             </div>
@@ -701,10 +804,10 @@
         <div class="flex flex-col items-start justify-between gap-4 border-t border-white/10 py-6 text-xs text-gray-400 md:flex-row md:items-center">
           <span>© {{ date('Y') }} Nexo</span>
           <div class="flex flex-wrap gap-6">
-            <a href="#" class="hover:text-white">Privacy</a>
-            <a href="#" class="hover:text-white">Terms</a>
-            <a href="#" class="hover:text-white">Cookies</a>
-            <a href="#" class="hover:text-white">Sitemap</a>
+            <a href="https://nexo.com/privacy-policy" target="_blank" rel="noopener" class="hover:text-white">Privacy</a>
+            <a href="https://nexo.com/general-terms-and-conditions" target="_blank" rel="noopener" class="hover:text-white">Terms</a>
+            <a href="https://nexo.com/cookie-policy" target="_blank" rel="noopener" class="hover:text-white">Cookies</a>
+            <a href="https://nexo.com/sitemap" target="_blank" rel="noopener" class="hover:text-white">Sitemap</a>
           </div>
         </div>
 
@@ -752,28 +855,178 @@
       });
 
       // ROI calculator
-      const amt = document.getElementById('amt');
-      const months = document.getElementById('months');
-      const apy = document.getElementById('apy');
-      const amtLabel = document.getElementById('amtLabel');
-      const monthsLabel = document.getElementById('monthsLabel');
+      const calcHost = document.getElementById('roiCalculator');
+      const amt = document.getElementById('calcAmount');
+      const amtLabel = document.getElementById('calcAmountLabel');
+      const planTypeSelect = document.getElementById('calcPlanType');
+      const planSelect = document.getElementById('calcPlan');
+      const duration = document.getElementById('duration');
+      const durationLabel = document.getElementById('durationLabel');
+      const durationUnitLabel = document.getElementById('durationUnitLabel');
+      const durationUnitLabelClone = document.getElementById('durationUnitLabelClone');
+      const durationRangeHint = document.getElementById('durationRangeHint');
       const finalEl = document.getElementById('final');
       const earningsEl = document.getElementById('earnings');
+      const effectiveApyEl = document.getElementById('effectiveApy');
+      const planRangeHint = document.getElementById('planRangeHint');
+      const formulaHint = document.getElementById('formulaHint');
 
-      function fmt(n){ return n.toLocaleString(undefined,{maximumFractionDigits:0}); }
-      function calc(){
-        const P = Number(amt.value);
-        const m = Number(months.value);
-        const r = Number(apy.value);
-        const F = P * Math.pow(1 + r/12, m);
-        const E = F - P;
-        finalEl.textContent = `$${fmt(F)}`;
-        earningsEl.textContent = `+ $${fmt(E)} earnings`;
-        amtLabel.textContent = `$${fmt(P)}`;
-        monthsLabel.textContent = `${m}`;
+      const planDataset = (() => {
+        if (!calcHost) {
+          return [];
+        }
+        try {
+          return JSON.parse(calcHost.dataset.plans || '[]');
+        } catch (error) {
+          console.warn('Unable to parse plan dataset', error);
+          return [];
+        }
+      })();
+
+      const planMap = {};
+      planDataset.forEach(plan => {
+        planMap[plan.slug] = plan;
+      });
+
+      const rangeConfig = {
+        daily: { min: 7, max: 180, step: 1, unit: 'days' },
+        weekly: { min: 4, max: 52, step: 1, unit: 'weeks' },
+        apy: { min: 3, max: 36, step: 1, unit: 'months' },
+      };
+
+      const fmtCurrency = (n) => n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+      function setAmountBounds(plan) {
+        if (!amt || !plan) return;
+        const min = Math.max(100, (plan.min_deposit || 50000) / 100);
+        const max = plan.max_deposit ? Math.max(plan.max_deposit / 100, min + 1000) : 250000;
+        amt.min = Math.round(min);
+        amt.max = Math.round(max);
+        if (Number(amt.value) < Number(amt.min)) {
+          amt.value = amt.min;
+        }
+        if (Number(amt.value) > Number(amt.max)) {
+          amt.value = amt.max;
+        }
+        amtLabel.textContent = `$${fmtCurrency(Number(amt.value))}`;
       }
-      [amt, months, apy].forEach(el => el && el.addEventListener('input', calc));
-      if (amt && months && apy) calc();
+
+      function updatePlanOptions(type) {
+        if (!planSelect) return null;
+        const filtered = planDataset.filter(plan => (plan.category || 'daily') === type);
+        planSelect.innerHTML = '';
+        filtered.forEach((plan, index) => {
+          const option = document.createElement('option');
+          const suffix = plan.roi_type === 'apy'
+            ? `${plan.apy_value}% APY`
+            : `${plan.roi_value}% per ${plan.roi_type === 'weekly' ? 'week' : 'day'}`;
+          option.value = plan.slug;
+          option.textContent = `${plan.name} (${suffix})`;
+          if (index === 0) {
+            option.selected = true;
+          }
+          planSelect.appendChild(option);
+        });
+        planSelect.disabled = filtered.length === 0;
+        return filtered.length ? filtered[0].slug : null;
+      }
+
+      function updateDurationControls(type) {
+        if (!duration) return;
+        const cfg = rangeConfig[type] || rangeConfig.daily;
+        duration.min = cfg.min;
+        duration.max = cfg.max;
+        duration.step = cfg.step;
+        if (Number(duration.value) < cfg.min) {
+          duration.value = cfg.min;
+        }
+        if (Number(duration.value) > cfg.max) {
+          duration.value = cfg.max;
+        }
+        durationLabel.textContent = duration.value;
+        durationUnitLabel.textContent = cfg.unit;
+        durationUnitLabelClone.textContent = cfg.unit;
+        durationRangeHint.textContent = `${cfg.min}–${cfg.max}`;
+      }
+
+      function updatePlanMeta(slug) {
+        if (!slug || !planRangeHint) return;
+        const plan = planMap[slug];
+        if (!plan) return;
+        setAmountBounds(plan);
+        const min = plan.min_deposit ? `$${fmtCurrency(plan.min_deposit / 100)}` : '$0';
+        const max = plan.max_deposit ? `$${fmtCurrency(plan.max_deposit / 100)}` : 'No max';
+        const term = plan.term_label || 'Flexible term';
+        const risk = plan.risk_label || 'Premium strategy';
+        planRangeHint.textContent = `${risk} · ${term} · Range ${min} – ${max}`;
+      }
+
+      function calculate() {
+        if (!planSelect || !amt || !duration) return;
+        const plan = planMap[planSelect.value];
+        if (!plan) return;
+        const amount = Number(amt.value);
+        const cycles = Number(duration.value);
+        let finalAmount = amount;
+        let formula = 'P × (1 + rate)^cycles';
+
+        if (plan.roi_type === 'weekly') {
+          const weeklyRate = plan.roi_value / 100;
+          finalAmount = amount * Math.pow(1 + weeklyRate, cycles);
+          formula = 'P × (1 + weekly_rate)^weeks';
+        } else if (plan.roi_type === 'apy') {
+          const monthlyRate = (plan.apy_value / 100) / 12;
+          finalAmount = amount * Math.pow(1 + monthlyRate, cycles);
+          formula = 'P × (1 + APY/12)^months';
+        } else {
+          const dailyRate = plan.roi_value / 100;
+          finalAmount = amount * Math.pow(1 + dailyRate, cycles);
+          formula = 'P × (1 + daily_rate)^days';
+        }
+
+        const earnings = finalAmount - amount;
+        finalEl.textContent = `$${fmtCurrency(finalAmount)}`;
+        earningsEl.textContent = `+ $${fmtCurrency(earnings)} projected profit`;
+        amtLabel.textContent = `$${fmtCurrency(amount)}`;
+        durationLabel.textContent = cycles;
+        formulaHint.textContent = formula;
+
+        const ratePerCycle = plan.roi_type === 'apy'
+          ? (plan.apy_value / 100) / 12
+          : (plan.roi_value / 100);
+        const periodsPerYear = plan.roi_type === 'daily' ? 365 : (plan.roi_type === 'weekly' ? 52 : 12);
+        const effectiveApy = Math.pow(1 + cycleRate, periodsPerYear) - 1;
+        effectiveApyEl.textContent = `Annualized ~${(effectiveApy * 100).toFixed(1)}%`;
+      }
+
+      if (planDataset.length && planTypeSelect && planSelect && amt && duration) {
+        let initialSlug = updatePlanOptions(planTypeSelect.value);
+        updateDurationControls(planTypeSelect.value);
+        updatePlanMeta(initialSlug || planSelect.value);
+        calculate();
+
+        planTypeSelect.addEventListener('change', () => {
+          const nextSlug = updatePlanOptions(planTypeSelect.value);
+          updateDurationControls(planTypeSelect.value);
+          updatePlanMeta(planSelect.value || nextSlug);
+          calculate();
+        });
+
+        planSelect.addEventListener('change', (event) => {
+          updatePlanMeta(event.target.value);
+          calculate();
+        });
+
+        amt.addEventListener('input', () => {
+          amtLabel.textContent = `$${fmtCurrency(Number(amt.value))}`;
+          calculate();
+        });
+
+        duration.addEventListener('input', () => {
+          durationLabel.textContent = duration.value;
+          calculate();
+        });
+      }
 
 
       // Helper: hide skeleton when TV iframe is present

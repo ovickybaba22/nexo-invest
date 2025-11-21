@@ -75,18 +75,21 @@ class DashboardController extends Controller
         $startOfYear = $today->copy()->startOfYear();
         $sevenDaysAgo = $today->copy()->subDays(6);
 
+        $weekStart = $today->copy()->startOfWeek();
         $profitStats = InvestmentProfitLog::where('user_id', $user->id)
             ->whereBetween('for_date', [$startOfYear, $today])
             ->selectRaw("
                 SUM(CASE WHEN for_date = ? THEN amount_cents ELSE 0 END) as today_profit,
                 SUM(CASE WHEN for_date >= ? THEN amount_cents ELSE 0 END) as seven_day_profit,
+                SUM(CASE WHEN for_date >= ? THEN amount_cents ELSE 0 END) as week_profit,
                 SUM(amount_cents) as ytd_profit
-            ", [$today->toDateString(), $sevenDaysAgo->toDateString()])
+            ", [$today->toDateString(), $sevenDaysAgo->toDateString(), $weekStart->toDateString()])
             ->first();
 
         $todayProfitCents = (int) optional($profitStats)->today_profit;
         $sevenDaysProfitCents = (int) optional($profitStats)->seven_day_profit;
         $ytdProfitCents = (int) optional($profitStats)->ytd_profit;
+        $thisWeekProfitCents = (int) optional($profitStats)->week_profit;
         $totalProfitCents = $lifetimeProfitCents;
 
         // Percentage changes relative to invested capital
@@ -190,6 +193,23 @@ class DashboardController extends Controller
             ->take(10)
             ->values();
 
+        $apyPortfolioCents = $activeInvestments
+            ->filter(fn ($investment) => optional($investment->plan)->roi_type === 'apy')
+            ->sum(fn ($investment) => $investment->current_value_cents ?? $investment->amount_cents);
+
+        $chartStart = $today->copy()->subDays(29);
+        $profitSeries = InvestmentProfitLog::where('user_id', $user->id)
+            ->where('for_date', '>=', $chartStart)
+            ->selectRaw('for_date, SUM(amount_cents) as total')
+            ->groupBy('for_date')
+            ->orderBy('for_date')
+            ->get()
+            ->map(fn ($row) => [
+                'date' => Carbon::parse($row->for_date)->toDateString(),
+                'amount' => (int) $row->total,
+            ])
+            ->values();
+
         // Money formatter passed to the dashboard view
         $formatMoney = function (?int $cents): string {
             $amount = ($cents ?? 0) / 100;
@@ -254,10 +274,14 @@ class DashboardController extends Controller
             'todayProfitCents'       => $todayProfitCents,
             'sevenDayProfitCents'    => $sevenDaysProfitCents,
             'ytdProfitCents'         => $ytdProfitCents,
+            'thisWeekProfitCents'    => $thisWeekProfitCents,
             'sevenDayChangePercent'  => $sevenDayChangePercent,
             'ytdChangePercent'       => $ytdChangePercent,
             'activeInvestments'      => $activeInvestments,
             'withdrawableWalletCents'=> $walletBalanceCents,
+            'totalInvestedCents'     => $totalInvestedCents,
+            'apyPortfolioCents'      => $apyPortfolioCents,
+            'profitSeries'           => $profitSeries,
         ]);
     }
     

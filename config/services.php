@@ -35,7 +35,12 @@ return [
         ],
     ],
     'nowpayments' => [
-    'api_key' => env('NOWPAYMENTS_API_KEY'),
-    'ipn_key' => env('NOWPAYMENTS_IPN_KEY'),
-],
+        'api_key' => env('NOWPAYMENTS_API_KEY'),
+        'ipn_key' => env('NOWPAYMENTS_IPN_KEY'),
+        'allowed_currencies' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', env('NOWPAYMENTS_ALLOWED_CURRENCIES', 'USD,EUR,GBP,BTC,ETH,USDT,USDC'))
+        ))),
+        'base_url' => env('NOWPAYMENTS_BASE_URL', 'https://api.nowpayments.io/v1'),
+    ],
 ];

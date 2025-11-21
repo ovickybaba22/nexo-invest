@@ -44,6 +44,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('deposits.create');
 
     Route::post('/deposits', [DepositController::class, 'store'])
+        ->middleware('throttle:deposits')
         ->name('deposits.store');
 
     // Withdrawals

@@ -10,6 +10,7 @@ class InvestmentProfitLog extends Model
         'investment_id',
         'user_id',
         'amount_cents',
+        'cycle_type',
         'for_date',
     ];
 
