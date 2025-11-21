@@ -22,6 +22,11 @@ use App\Http\Controllers\PlanController;
 
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 
+Route::view('/about', 'pages.about')->name('about');
+Route::view('/privacy', 'pages.privacy')->name('privacy');
+Route::view('/terms', 'pages.terms')->name('terms');
+Route::view('/risk-disclosure', 'pages.risk')->name('risk');
+
 Route::get('/plans', [PlanController::class, 'index'])
     ->name('plans.index');
 

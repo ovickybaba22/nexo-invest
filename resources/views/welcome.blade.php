@@ -236,39 +236,39 @@
         </div>
 
         <div class="mt-8 grid gap-6 md:grid-cols-3">
-          <!-- Core Income -->
+          <!-- Core Yield -->
           <article class="opacity-0 translate-y-6 transition-all duration-700 rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/0 p-6" data-animate>
-            <div class="text-xs text-gray-300">Program tier: Core Income</div>
-            <h3 class="mt-2 text-xl font-semibold text-white">Core Income</h3>
-            <div class="mt-3 text-4xl font-extrabold text-white">7.0% <span class="text-base font-semibold text-gray-300">APY</span></div>
+            <div class="text-xs text-gray-300">Nexo Managed Portfolios</div>
+            <h3 class="mt-2 text-xl font-semibold text-white">Nexo Core Yield</h3>
+            <div class="mt-3 text-4xl font-extrabold text-white">15% <span class="text-base font-semibold text-gray-300">APY</span></div>
             <ul class="mt-4 space-y-2 text-sm text-gray-300">
-              <li>• High‑grade yield strategies</li>
-              <li>• 30‑day liquidity window</li>
-              <li>• Capital preservation focus</li>
+              <li>• Conservative mandate balancing CeFi + DeFi venues</li>
+              <li>• Monthly cash distributions to your wallet</li>
+              <li>• Capital preservation with automated hedging</li>
             </ul>
             <a href="{{ route('register') }}" class="mt-6 inline-block rounded-md bg-cyan-500 px-4 py-2 font-semibold text-black hover:bg-cyan-400">Start</a>
           </article>
-          <!-- Growth -->
+          <!-- Balanced Yield -->
           <article class="opacity-0 translate-y-6 transition-all duration-700 delay-150 rounded-2xl border border-white/10 bg-gradient-to-br from-cyan-500/10 to-white/0 p-6" data-animate>
-            <div class="text-xs text-gray-300">Program tier: Growth</div>
-            <h3 class="mt-2 text-xl font-semibold text-white">Growth</h3>
-            <div class="mt-3 text-4xl font-extrabold text-white">10.8% <span class="text-base font-semibold text-gray-300">APY</span></div>
+            <div class="text-xs text-gray-300">Nexo Managed Portfolios</div>
+            <h3 class="mt-2 text-xl font-semibold text-white">Nexo Balanced Yield</h3>
+            <div class="mt-3 text-4xl font-extrabold text-white">22% <span class="text-base font-semibold text-gray-300">APY</span></div>
             <ul class="mt-4 space-y-2 text-sm text-gray-300">
-              <li>• Factor‑tilted baskets</li>
-              <li>• Auto‑rebalancing weekly</li>
-              <li>• Drawdown controls</li>
+              <li>• Actively managed growth sleeve with auto rebalancing</li>
+              <li>• Weekly oversight plus monthly statements</li>
+              <li>• Designed for balanced risk/return mandates</li>
             </ul>
             <a href="{{ route('register') }}" class="mt-6 inline-block rounded-md border border-white/20 px-4 py-2 font-semibold text-white hover:bg-white/10">Start</a>
           </article>
-          <!-- Balanced -->
+          <!-- Institutional Yield -->
           <article class="opacity-0 translate-y-6 transition-all duration-700 delay-300 rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/10 to-white/0 p-6" data-animate>
-            <div class="text-xs text-gray-300">Program tier: Balanced</div>
-            <h3 class="mt-2 text-xl font-semibold text-white">Balanced</h3>
-            <div class="mt-3 text-4xl font-extrabold text-white">8.9% <span class="text-base font-semibold text-gray-300">APY</span></div>
+            <div class="text-xs text-gray-300">Nexo Private Desk</div>
+            <h3 class="mt-2 text-xl font-semibold text-white">Nexo Institutional Yield</h3>
+            <div class="mt-3 text-4xl font-extrabold text-white">25% <span class="text-base font-semibold text-gray-300">APY</span></div>
             <ul class="mt-4 space-y-2 text-sm text-gray-300">
-              <li>• Blend of Income & Growth</li>
-              <li>• Monthly distributions</li>
-              <li>• Tax‑efficient overlays</li>
+              <li>• Bespoke allocation with strategist access</li>
+              <li>• Liquidity windows coordinated with your treasury</li>
+              <li>• Custom hedging + reporting package</li>
             </ul>
             <a href="{{ route('register') }}" class="mt-6 inline-block rounded-md border border-white/20 px-4 py-2 font-semibold text-white hover:bg-white/10">Start</a>
           </article>
@@ -319,21 +319,92 @@
         ],
       ];
       $plansByCategory = $plansCollection->groupBy(fn ($plan) => $plan->category ?? 'daily');
-      $calculatorPlans = $plansCollection->map(function ($plan) {
-        $min = (int) ($plan->min_deposit_cents ?? $plan->min_deposit ?? 0);
-        $max = $plan->max_deposit_cents ?? $plan->max_deposit;
+
+      $calculatorBlueprints = [
+        'nexo-daily-starter' => [
+          'name' => 'Nexo Daily Starter',
+          'category' => 'daily',
+          'roi_type' => 'daily',
+          'roi_value' => 0.7,
+          'apy_value' => null,
+          'min_deposit' => 50000,
+          'max_deposit' => 499900,
+          'term_label' => 'Flexible / 30+ days',
+          'risk_label' => 'Moderate risk',
+        ],
+        'nexo-daily-turbo' => [
+          'name' => 'Nexo Daily Turbo',
+          'category' => 'daily',
+          'roi_type' => 'daily',
+          'roi_value' => 1.0,
+          'apy_value' => null,
+          'min_deposit' => 100000,
+          'max_deposit' => 999900,
+          'term_label' => 'Flexible / 60+ days',
+          'risk_label' => 'High risk',
+        ],
+        'nexo-growth-weekly' => [
+          'name' => 'Nexo Growth Weekly',
+          'category' => 'weekly',
+          'roi_type' => 'weekly',
+          'roi_value' => 3.0,
+          'apy_value' => null,
+          'min_deposit' => 100000,
+          'max_deposit' => 999900,
+          'term_label' => 'Recommended 8+ weeks',
+          'risk_label' => 'Balanced risk',
+        ],
+        'nexo-core-yield' => [
+          'name' => 'Nexo Core Yield',
+          'category' => 'apy',
+          'roi_type' => 'apy',
+          'roi_value' => 15.0,
+          'apy_value' => 15.0,
+          'min_deposit' => 200000,
+          'max_deposit' => null,
+          'term_label' => '12 month minimum',
+          'risk_label' => 'Conservative income',
+        ],
+        'nexo-balanced-yield' => [
+          'name' => 'Nexo Balanced Yield',
+          'category' => 'apy',
+          'roi_type' => 'apy',
+          'roi_value' => 22.0,
+          'apy_value' => 22.0,
+          'min_deposit' => 500000,
+          'max_deposit' => null,
+          'term_label' => '12 month minimum',
+          'risk_label' => 'Balanced growth',
+        ],
+        'nexo-institutional-yield' => [
+          'name' => 'Nexo Institutional Yield',
+          'category' => 'apy',
+          'roi_type' => 'apy',
+          'roi_value' => 25.0,
+          'apy_value' => 25.0,
+          'min_deposit' => 2500000,
+          'max_deposit' => null,
+          'term_label' => '12+ month bespoke term',
+          'risk_label' => 'Custom mandate',
+        ],
+      ];
+
+      $calculatorPlans = collect($calculatorBlueprints)->map(function ($defaults, $slug) use ($plansCollection) {
+        $plan = $plansCollection->firstWhere('slug', $slug);
+        $min = (int) ($plan->min_deposit_cents ?? $plan->min_deposit ?? $defaults['min_deposit']);
+        $max = $plan->max_deposit_cents ?? $plan->max_deposit ?? $defaults['max_deposit'];
 
         return [
-          'slug'        => $plan->slug,
-          'name'        => $plan->name,
-          'category'    => $plan->category ?? 'daily',
-          'roi_type'    => $plan->roi_type ?? 'daily',
-          'roi_value'   => (float) ($plan->roi_value ?? 0),
-          'apy_value'   => (float) ($plan->apy_value ?? $plan->target_roi_percent ?? $plan->roi_value ?? 0),
+          'slug'        => $slug,
+          'name'        => $plan->name ?? $defaults['name'],
+          'category'    => $plan->category ?? $defaults['category'],
+          'roi_type'    => $plan->roi_type ?? $defaults['roi_type'],
+          'roi_value'   => (float) ($plan->roi_value ?? $defaults['roi_value']),
+          'apy_value'   => (float) ($plan->apy_value ?? $defaults['apy_value'] ?? $defaults['roi_value']),
           'min_deposit' => $min,
           'max_deposit' => is_null($max) ? null : (int) $max,
-          'term_label'  => $plan->term_label ?? '',
-          'risk_label'  => $plan->risk_level ?? '',
+          'term_label'  => $plan->term_label ?? $defaults['term_label'],
+          'risk_label'  => $plan->risk_level ?? $defaults['risk_label'],
         ];
       })->values();
     @endphp
@@ -356,31 +427,22 @@
               <div class="mt-1 text-xs text-gray-400"><span id="calcAmountLabel">$2,500</span></div>
             </div>
 
-            <div class="mt-6 grid gap-4 md:grid-cols-2">
-              <div>
-                <label class="text-sm text-gray-300">Plan family</label>
-                <select id="calcPlanType" class="mt-2 w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-sm text-white">
-                  <option value="daily">Daily yield</option>
-                  <option value="weekly">Weekly growth</option>
-                  <option value="apy">Managed portfolios</option>
-                </select>
-              </div>
-              <div>
-                <label class="text-sm text-gray-300">Plan</label>
-                <select id="calcPlan" class="mt-2 w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-sm text-white"></select>
-              </div>
+            <div class="mt-6">
+              <label class="text-sm text-gray-300">Select plan</label>
+              <select id="calcPlan" class="mt-2 w-full rounded-md border border-white/10 bg-black/60 px-3 py-2 text-sm text-white"></select>
+              <p class="mt-2 text-xs text-gray-400" id="planRangeHint">Choose a plan to view deposit parameters.</p>
             </div>
 
             <div class="mt-6">
               <label class="text-sm text-gray-300 flex items-center justify-between">
-                <span>Duration (<span id="durationUnitLabel">days</span>)</span>
-                <span class="text-[11px] text-gray-500" id="durationRangeHint">7–180</span>
+                <span>Duration (days)</span>
+                <span class="text-[11px] text-gray-500">7–365</span>
               </label>
-              <input id="duration" type="range" min="7" max="180" step="1" value="30" class="mt-2 w-full accent-cyan-500" />
-              <div class="mt-1 text-xs text-gray-400"><span id="durationLabel">30</span> <span id="durationUnitLabelClone">days</span></div>
+              <input id="duration" type="range" min="7" max="365" step="1" value="60" class="mt-2 w-full accent-cyan-500" />
+              <div class="mt-1 text-xs text-gray-400"><span id="durationLabel">60</span> days</div>
             </div>
 
-            <p class="mt-6 text-xs text-gray-400" id="planRangeHint">Select a plan to view allocation range.</p>
+            <p class="mt-6 text-xs text-gray-400" id="planMeta">Returns are target yields. Capital at risk.</p>
           </div>
 
           <div class="rounded-xl border border-white/10 bg-white/5 p-6">
@@ -745,24 +807,21 @@
           <div>
             <h3 class="text-sm font-semibold text-white">Company</h3>
             <ul class="mt-3 space-y-2 text-sm">
-              <li><a class="hover:text-white" href="https://nexo.com/about" target="_blank" rel="noopener">About</a></li>
-              <li><a class="hover:text-white" href="https://nexo.com/security" target="_blank" rel="noopener">Security</a></li>
-              <li><a class="hover:text-white" href="https://nexo.com/partnerships" target="_blank" rel="noopener">Partnerships</a></li>
-              <li><a class="hover:text-white" href="https://nexo.com/blog" target="_blank" rel="noopener">News &amp; Insights</a></li>
-              <li><a class="hover:text-white" href="https://support.nexo.com" target="_blank" rel="noopener">Help Center</a></li>
-              <li><a class="hover:text-white" href="https://nexo.com/contact-us" target="_blank" rel="noopener">Contacts</a></li>
+              <li><a class="hover:text-white" href="{{ route('about') }}">About Nexo Invest</a></li>
+              <li><a class="hover:text-white" href="{{ route('privacy') }}">Privacy Policy</a></li>
+              <li><a class="hover:text-white" href="{{ route('terms') }}">Terms &amp; Conditions</a></li>
+              <li><a class="hover:text-white" href="{{ route('risk') }}">Risk Disclosure</a></li>
+              <li><a class="hover:text-white" href="mailto:support@nexoinvest.pro">Support</a></li>
             </ul>
           </div>
 
           <div>
             <h3 class="text-sm font-semibold text-white">Legal</h3>
             <ul class="mt-3 space-y-2 text-sm">
-              <li><a class="hover:text-white" href="https://nexo.com/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a></li>
-              <li><a class="hover:text-white" href="https://nexo.com/cookie-policy" target="_blank" rel="noopener">Cookies Policy</a></li>
-              <li><a class="hover:text-white" href="https://nexo.com/exchange-terms" target="_blank" rel="noopener">Exchange Terms</a></li>
-              <li><a class="hover:text-white" href="https://nexo.com/general-terms-and-conditions" target="_blank" rel="noopener">Services Terms</a></li>
-              <li><a class="hover:text-white" href="https://nexo.com/staking-terms" target="_blank" rel="noopener">Staking Terms</a></li>
-              <li><a class="hover:text-white" href="https://nexo.com/credit-line-terms" target="_blank" rel="noopener">Credit Terms</a></li>
+              <li><a class="hover:text-white" href="{{ route('privacy') }}">Data &amp; Cookies</a></li>
+              <li><a class="hover:text-white" href="{{ route('terms') }}">Client Agreement</a></li>
+              <li><a class="hover:text-white" href="{{ route('risk') }}">Capital at risk notice</a></li>
+              <li><span class="text-slate-500">Gateway 21 Limited approval notice</span></li>
             </ul>
           </div>
 
@@ -856,174 +915,143 @@
 
       // ROI calculator
       const calcHost = document.getElementById('roiCalculator');
-      const amt = document.getElementById('calcAmount');
-      const amtLabel = document.getElementById('calcAmountLabel');
-      const planTypeSelect = document.getElementById('calcPlanType');
-      const planSelect = document.getElementById('calcPlan');
-      const duration = document.getElementById('duration');
+      const amountInput = document.getElementById('calcAmount');
+      const amountLabel = document.getElementById('calcAmountLabel');
+      const durationInput = document.getElementById('duration');
       const durationLabel = document.getElementById('durationLabel');
-      const durationUnitLabel = document.getElementById('durationUnitLabel');
-      const durationUnitLabelClone = document.getElementById('durationUnitLabelClone');
-      const durationRangeHint = document.getElementById('durationRangeHint');
+      const planSelect = document.getElementById('calcPlan');
+      const planRangeHint = document.getElementById('planRangeHint');
+      const planMeta = document.getElementById('planMeta');
       const finalEl = document.getElementById('final');
       const earningsEl = document.getElementById('earnings');
       const effectiveApyEl = document.getElementById('effectiveApy');
-      const planRangeHint = document.getElementById('planRangeHint');
       const formulaHint = document.getElementById('formulaHint');
 
-      const planDataset = (() => {
-        if (!calcHost) {
-          return [];
-        }
+      const parsedPlans = (() => {
+        if (!calcHost) return [];
         try {
           return JSON.parse(calcHost.dataset.plans || '[]');
         } catch (error) {
-          console.warn('Unable to parse plan dataset', error);
+          console.warn('Unable to parse calculator plans', error);
           return [];
         }
       })();
 
-      const planMap = {};
-      planDataset.forEach(plan => {
-        planMap[plan.slug] = plan;
-      });
+      const fallbackPlans = [
+        { slug:'nexo-daily-starter', name:'Nexo Daily Starter', roi_type:'daily', roi_value:0.7, apy_value:0.7, min_deposit:50000, max_deposit:499900, term_label:'Flexible / 30+ days', risk_label:'Moderate risk' },
+        { slug:'nexo-daily-turbo', name:'Nexo Daily Turbo', roi_type:'daily', roi_value:1.0, apy_value:1.0, min_deposit:100000, max_deposit:999900, term_label:'Flexible / 60+ days', risk_label:'High risk' },
+        { slug:'nexo-growth-weekly', name:'Nexo Growth Weekly', roi_type:'weekly', roi_value:3.0, apy_value:3.0, min_deposit:100000, max_deposit:999900, term_label:'Recommended 8+ weeks', risk_label:'Balanced risk' },
+        { slug:'nexo-core-yield', name:'Nexo Core Yield', roi_type:'apy', roi_value:15.0, apy_value:15.0, min_deposit:200000, max_deposit:null, term_label:'12 month minimum', risk_label:'Conservative income' },
+        { slug:'nexo-balanced-yield', name:'Nexo Balanced Yield', roi_type:'apy', roi_value:22.0, apy_value:22.0, min_deposit:500000, max_deposit:null, term_label:'12 month minimum', risk_label:'Balanced growth' },
+        { slug:'nexo-institutional-yield', name:'Nexo Institutional Yield', roi_type:'apy', roi_value:25.0, apy_value:25.0, min_deposit:2500000, max_deposit:null, term_label:'12+ month bespoke term', risk_label:'Custom mandate' },
+      ];
 
-      const rangeConfig = {
-        daily: { min: 7, max: 180, step: 1, unit: 'days' },
-        weekly: { min: 4, max: 52, step: 1, unit: 'weeks' },
-        apy: { min: 3, max: 36, step: 1, unit: 'months' },
+      const planData = parsedPlans.length ? parsedPlans : fallbackPlans;
+      const planMap = {};
+      planData.forEach((plan) => { planMap[plan.slug] = plan; });
+
+      const currency = (value) => value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+      const setAmountBounds = (plan) => {
+        if (!amountInput || !plan) return;
+        const min = Math.max(100, Math.round((plan.min_deposit || 50000) / 100));
+        const max = plan.max_deposit ? Math.max(Math.round(plan.max_deposit / 100), min + 1000) : 250000;
+        amountInput.min = min;
+        amountInput.max = max;
+        if (Number(amountInput.value) < min) amountInput.value = min;
+        if (Number(amountInput.value) > max) amountInput.value = max;
+        amountLabel.textContent = `$${currency(Number(amountInput.value))}`;
       };
 
-      const fmtCurrency = (n) => n.toLocaleString(undefined, { maximumFractionDigits: 0 });
-
-      function setAmountBounds(plan) {
-        if (!amt || !plan) return;
-        const min = Math.max(100, (plan.min_deposit || 50000) / 100);
-        const max = plan.max_deposit ? Math.max(plan.max_deposit / 100, min + 1000) : 250000;
-        amt.min = Math.round(min);
-        amt.max = Math.round(max);
-        if (Number(amt.value) < Number(amt.min)) {
-          amt.value = amt.min;
-        }
-        if (Number(amt.value) > Number(amt.max)) {
-          amt.value = amt.max;
-        }
-        amtLabel.textContent = `$${fmtCurrency(Number(amt.value))}`;
-      }
-
-      function updatePlanOptions(type) {
-        if (!planSelect) return null;
-        const filtered = planDataset.filter(plan => (plan.category || 'daily') === type);
+      const populatePlanOptions = () => {
+        if (!planSelect) return;
         planSelect.innerHTML = '';
-        filtered.forEach((plan, index) => {
+        planData.forEach((plan, index) => {
           const option = document.createElement('option');
           const suffix = plan.roi_type === 'apy'
             ? `${plan.apy_value}% APY`
-            : `${plan.roi_value}% per ${plan.roi_type === 'weekly' ? 'week' : 'day'}`;
+            : `${plan.roi_value}% ${plan.roi_type === 'weekly' ? 'weekly' : 'daily'}`;
           option.value = plan.slug;
           option.textContent = `${plan.name} (${suffix})`;
-          if (index === 0) {
-            option.selected = true;
-          }
+          if (index === 0) option.selected = true;
           planSelect.appendChild(option);
         });
-        planSelect.disabled = filtered.length === 0;
-        return filtered.length ? filtered[0].slug : null;
-      }
+      };
 
-      function updateDurationControls(type) {
-        if (!duration) return;
-        const cfg = rangeConfig[type] || rangeConfig.daily;
-        duration.min = cfg.min;
-        duration.max = cfg.max;
-        duration.step = cfg.step;
-        if (Number(duration.value) < cfg.min) {
-          duration.value = cfg.min;
-        }
-        if (Number(duration.value) > cfg.max) {
-          duration.value = cfg.max;
-        }
-        durationLabel.textContent = duration.value;
-        durationUnitLabel.textContent = cfg.unit;
-        durationUnitLabelClone.textContent = cfg.unit;
-        durationRangeHint.textContent = `${cfg.min}–${cfg.max}`;
-      }
-
-      function updatePlanMeta(slug) {
-        if (!slug || !planRangeHint) return;
+      const updatePlanMeta = (slug) => {
         const plan = planMap[slug];
-        if (!plan) return;
+        if (!planRangeHint || !plan) return;
         setAmountBounds(plan);
-        const min = plan.min_deposit ? `$${fmtCurrency(plan.min_deposit / 100)}` : '$0';
-        const max = plan.max_deposit ? `$${fmtCurrency(plan.max_deposit / 100)}` : 'No max';
-        const term = plan.term_label || 'Flexible term';
-        const risk = plan.risk_label || 'Premium strategy';
-        planRangeHint.textContent = `${risk} · ${term} · Range ${min} – ${max}`;
-      }
+        const min = plan.min_deposit ? `$${currency(plan.min_deposit / 100)}` : '$0';
+        const max = plan.max_deposit ? `$${currency(plan.max_deposit / 100)}` : 'No max';
+        planRangeHint.textContent = `${plan.risk_label || 'Premium strategy'} • ${plan.term_label || 'Flexible term'} • ${min} – ${max}`;
+        if (planMeta) {
+          const cadence = plan.roi_type === 'weekly'
+            ? 'Weekly crediting cadence'
+            : (plan.roi_type === 'apy' ? 'Monthly APY compounding' : 'Daily wallet credits');
+          planMeta.textContent = cadence;
+        }
+      };
 
-      function calculate() {
-        if (!planSelect || !amt || !duration) return;
+      const calculate = () => {
+        if (!planSelect || !amountInput || !durationInput) return;
         const plan = planMap[planSelect.value];
         if (!plan) return;
-        const amount = Number(amt.value);
-        const cycles = Number(duration.value);
+
+        const amount = Number(amountInput.value);
+        const days = Number(durationInput.value);
         let finalAmount = amount;
         let formula = 'P × (1 + rate)^cycles';
 
         if (plan.roi_type === 'weekly') {
           const weeklyRate = plan.roi_value / 100;
-          finalAmount = amount * Math.pow(1 + weeklyRate, cycles);
-          formula = 'P × (1 + weekly_rate)^weeks';
+          const weeks = days / 7;
+          finalAmount = amount * Math.pow(1 + weeklyRate, weeks);
+          formula = 'P × (1 + weekly_rate)^(days/7)';
         } else if (plan.roi_type === 'apy') {
-          const monthlyRate = (plan.apy_value / 100) / 12;
-          finalAmount = amount * Math.pow(1 + monthlyRate, cycles);
-          formula = 'P × (1 + APY/12)^months';
+          const annualRate = plan.apy_value / 100;
+          const years = days / 365;
+          finalAmount = amount * Math.pow(1 + annualRate, years);
+          formula = 'P × (1 + APY)^(days/365)';
         } else {
           const dailyRate = plan.roi_value / 100;
-          finalAmount = amount * Math.pow(1 + dailyRate, cycles);
+          finalAmount = amount * Math.pow(1 + dailyRate, days);
           formula = 'P × (1 + daily_rate)^days';
         }
 
-        const earnings = finalAmount - amount;
-        finalEl.textContent = `$${fmtCurrency(finalAmount)}`;
-        earningsEl.textContent = `+ $${fmtCurrency(earnings)} projected profit`;
-        amtLabel.textContent = `$${fmtCurrency(amount)}`;
-        durationLabel.textContent = cycles;
+        const profit = finalAmount - amount;
+        finalEl.textContent = `$${currency(finalAmount)}`;
+        earningsEl.textContent = `+ $${currency(profit)} projected profit`;
+        amountLabel.textContent = `$${currency(amount)}`;
+        durationLabel.textContent = `${days}`;
         formulaHint.textContent = formula;
 
-        const ratePerCycle = plan.roi_type === 'apy'
-          ? (plan.apy_value / 100) / 12
-          : (plan.roi_value / 100);
-        const periodsPerYear = plan.roi_type === 'daily' ? 365 : (plan.roi_type === 'weekly' ? 52 : 12);
-        const effectiveApy = Math.pow(1 + cycleRate, periodsPerYear) - 1;
-        effectiveApyEl.textContent = `Annualized ~${(effectiveApy * 100).toFixed(1)}%`;
-      }
+        let effectiveYield = 0;
+        if (plan.roi_type === 'weekly') {
+          effectiveYield = Math.pow(1 + plan.roi_value / 100, 52) - 1;
+        } else if (plan.roi_type === 'apy') {
+          effectiveYield = plan.apy_value / 100;
+        } else {
+          effectiveYield = Math.pow(1 + plan.roi_value / 100, 365) - 1;
+        }
+        effectiveApyEl.textContent = `Annualized ~${(effectiveYield * 100).toFixed(1)}%`;
+      };
 
-      if (planDataset.length && planTypeSelect && planSelect && amt && duration) {
-        let initialSlug = updatePlanOptions(planTypeSelect.value);
-        updateDurationControls(planTypeSelect.value);
-        updatePlanMeta(initialSlug || planSelect.value);
+      if (calcHost && planSelect && amountInput && durationInput) {
+        populatePlanOptions();
+        updatePlanMeta(planSelect.value);
         calculate();
 
-        planTypeSelect.addEventListener('change', () => {
-          const nextSlug = updatePlanOptions(planTypeSelect.value);
-          updateDurationControls(planTypeSelect.value);
-          updatePlanMeta(planSelect.value || nextSlug);
+        planSelect.addEventListener('change', () => {
+          updatePlanMeta(planSelect.value);
           calculate();
         });
-
-        planSelect.addEventListener('change', (event) => {
-          updatePlanMeta(event.target.value);
+        amountInput.addEventListener('input', () => {
+          amountLabel.textContent = `$${currency(Number(amountInput.value))}`;
           calculate();
         });
-
-        amt.addEventListener('input', () => {
-          amtLabel.textContent = `$${fmtCurrency(Number(amt.value))}`;
-          calculate();
-        });
-
-        duration.addEventListener('input', () => {
-          durationLabel.textContent = duration.value;
+        durationInput.addEventListener('input', () => {
+          durationLabel.textContent = durationInput.value;
           calculate();
         });
       }

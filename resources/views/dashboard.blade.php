@@ -1,5 +1,6 @@
 <x-app-layout>
     @php
+        use Illuminate\Support\Str;
         // Money helper (same as before)
         $formatMoney = $formatMoney ?? function (?int $cents): string {
             $amount = ($cents ?? 0) / 100;
@@ -78,6 +79,25 @@
                         <p class="mt-1 text-lg font-semibold text-amber-300">
                             {{ $formatMoney($pendingWithdrawalCents ?? 0) }}
                         </p>
+                    </div>
+                </div>
+
+                {{-- cycle profit summary --}}
+                <div class="grid gap-3 sm:grid-cols-3 text-[11px] sm:text-xs">
+                    <div class="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+                        <p class="text-slate-400">Daily yield profit (lifetime)</p>
+                        <p class="mt-1 text-lg font-semibold text-emerald-300">{{ $formatMoney($categoryProfitCents['daily'] ?? 0) }}</p>
+                        <p class="text-[10px] text-slate-500">Includes {{ $formatMoney($todayProfitCents ?? 0) }} today</p>
+                    </div>
+                    <div class="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+                        <p class="text-slate-400">Weekly growth profit</p>
+                        <p class="mt-1 text-lg font-semibold text-indigo-300">{{ $formatMoney($categoryProfitCents['weekly'] ?? 0) }}</p>
+                        <p class="text-[10px] text-slate-500">This week {{ $formatMoney($thisWeekProfitCents ?? 0) }}</p>
+                    </div>
+                    <div class="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+                        <p class="text-slate-400">APY portfolios profit</p>
+                        <p class="mt-1 text-lg font-semibold text-cyan-300">{{ $formatMoney($categoryProfitCents['apy'] ?? 0) }}</p>
+                        <p class="text-[10px] text-slate-500">Managed balance {{ $formatMoney($apyPortfolioCents ?? 0) }}</p>
                     </div>
                 </div>
             </div>
@@ -329,6 +349,97 @@
                             @endforelse
                         </div>
                     </div>
+                </div>
+
+                {{-- Earnings chart + insights --}}
+                <div class="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.15fr),minmax(0,0.85fr)]">
+                    <div class="rounded-2xl border border-slate-800/70 bg-[#050814]/90 p-5">
+                        <div class="flex items-center justify-between text-sm text-slate-300">
+                            <span>30-day earnings</span>
+                            <span class="text-[11px] text-slate-500">Live compounding from all plans</span>
+                        </div>
+                        <div class="mt-4">
+                            <canvas id="earningsChart" height="220"></canvas>
+                        </div>
+                    </div>
+                    <div class="rounded-2xl border border-slate-800/70 bg-[#050814]/90 p-5 space-y-4 text-sm text-slate-300">
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase tracking-[0.2em]">Performance</p>
+                            <p class="mt-1 text-lg font-semibold text-white">{{ $formatMoney($todayProfitCents ?? 0) }}</p>
+                            <p class="text-[11px] text-slate-500">Profit credited today</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase tracking-[0.2em]">This week</p>
+                            <p class="mt-1 text-lg font-semibold text-white">{{ $formatMoney($thisWeekProfitCents ?? 0) }}</p>
+                            <p class="text-[11px] text-slate-500">Includes all weekly cycles</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase tracking-[0.2em]">Year to date</p>
+                            <p class="mt-1 text-lg font-semibold text-white">{{ $formatMoney($ytdProfitCents ?? 0) }}</p>
+                            <p class="text-[11px] text-slate-500">Vs invested {{ number_format($ytdChangePercent ?? 0, 2) }}%</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Active investments grouped --}}
+                <div class="mt-10 space-y-8">
+                    @foreach($investmentsByCategory as $category => $group)
+                        @php
+                            $label = $categoryLabels[$category] ?? ucfirst($category);
+                            $iconColor = match($category) {
+                                'weekly' => 'text-emerald-300',
+                                'apy' => 'text-indigo-300',
+                                default => 'text-cyan-300',
+                            };
+                        @endphp
+                        <div class="rounded-2xl border border-slate-800 bg-[#050814]/90 p-5">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs uppercase tracking-[0.3em] text-slate-500">{{ $label }}</p>
+                                    <p class="mt-1 text-lg font-semibold text-white">{{ $group->count() }} active {{ Str::plural('plan', $group->count()) }}</p>
+                                </div>
+                                <span class="inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs {{ $iconColor }}">
+                                    Next credit cadence: {{ $category === 'weekly' ? 'Weekly' : ($category === 'apy' ? 'Monthly' : 'Daily') }}
+                                </span>
+                            </div>
+                            <div class="mt-4 overflow-x-auto">
+                                <table class="min-w-full text-left text-sm text-slate-300">
+                                    <thead class="text-xs uppercase tracking-wide text-slate-500">
+                                        <tr>
+                                            <th class="py-2 pr-4">Plan</th>
+                                            <th class="py-2 pr-4">Principal</th>
+                                            <th class="py-2 pr-4">Profit to date</th>
+                                            <th class="py-2 pr-4">Last payout</th>
+                                            <th class="py-2">Next payout</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800 text-sm">
+                                        @foreach($group as $investment)
+                                            @php
+                                                $plan = $investment->plan;
+                                                $principal = $formatMoney($investment->amount_cents ?? 0);
+                                                $profit = $formatMoney($investment->accrued_profit_cents ?? 0);
+                                            @endphp
+                                            <tr>
+                                                <td class="py-3 pr-4">
+                                                    <p class="font-semibold text-white">{{ $plan->name ?? 'Plan' }}</p>
+                                                    <p class="text-xs text-slate-500">{{ $plan->term_label ?? 'Flexible term' }}</p>
+                                                </td>
+                                                <td class="py-3 pr-4">{{ $principal }}</td>
+                                                <td class="py-3 pr-4 text-emerald-300">{{ $profit }}</td>
+                                                <td class="py-3 pr-4 text-slate-400">
+                                                    {{ optional($investment->last_payout_at ?? $investment->last_yield_at)?->timezone(config('app.timezone'))->format('M j, Y') ?? '—' }}
+                                                </td>
+                                                <td class="py-3 text-slate-100">
+                                                    {{ optional($investment->next_payout_at ?? $investment->next_yield_at)?->timezone(config('app.timezone'))->format('M j, Y') ?? 'Queued' }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
 
                 {{-- GRID: LEFT (plans + activity) / RIGHT (available plans + wallet) --}}
@@ -702,11 +813,11 @@
                         </div>
 
                         <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-                            <a href="#" class="hover:text-sky-400">
+                            <a href="{{ route('terms') }}" class="hover:text-sky-400">
                                 Terms of Service
                             </a>
                             <span class="text-slate-700">•</span>
-                            <a href="#" class="hover:text-sky-400">
+                            <a href="{{ route('privacy') }}" class="hover:text-sky-400">
                                 Privacy Policy
                             </a>
                             <span class="hidden md:inline text-slate-700">•</span>
@@ -721,3 +832,58 @@
         </div>
     </div>
 </x-app-layout>
+
+@once
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('earningsChart');
+            if (!canvas || typeof Chart === 'undefined') return;
+
+            const dataset = @json($profitSeries ?? []);
+            const labels = dataset.map(point => point.date);
+            const values = dataset.map(point => (point.amount ?? 0) / 100);
+
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Profit (USD)',
+                        data: values,
+                        borderColor: '#22d3ee',
+                        backgroundColor: 'rgba(34,211,238,0.15)',
+                        borderWidth: 2,
+                        fill: true,
+                        pointRadius: 0,
+                        tension: 0.35,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', maxTicksLimit: 6 },
+                        },
+                        y: {
+                            grid: { color: 'rgba(148,163,184,0.1)' },
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: value => `$${value.toLocaleString()}`,
+                            },
+                        },
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: context => `Profit: $${context.parsed.y.toLocaleString()}`,
+                            },
+                        },
+                    },
+                },
+            });
+        });
+    </script>
+@endonce

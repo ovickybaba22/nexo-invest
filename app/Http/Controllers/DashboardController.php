@@ -92,6 +92,17 @@ class DashboardController extends Controller
         $thisWeekProfitCents = (int) optional($profitStats)->week_profit;
         $totalProfitCents = $lifetimeProfitCents;
 
+        $cycleTotals = InvestmentProfitLog::where('user_id', $user->id)
+            ->selectRaw("
+                SUM(CASE WHEN cycle_type = 'daily' THEN amount_cents ELSE 0 END) as daily_profit,
+                SUM(CASE WHEN cycle_type = 'weekly' THEN amount_cents ELSE 0 END) as weekly_profit,
+                SUM(CASE WHEN cycle_type = 'apy' THEN amount_cents ELSE 0 END) as apy_profit
+            ")->first();
+
+        $dailyCycleProfitCents = (int) optional($cycleTotals)->daily_profit;
+        $weeklyCycleProfitCents = (int) optional($cycleTotals)->weekly_profit;
+        $apyCycleProfitCents = (int) optional($cycleTotals)->apy_profit;
+
         // Percentage changes relative to invested capital
         $denominatorCents = max($totalInvestedCents, 1); // avoid division by zero
 
@@ -210,6 +221,10 @@ class DashboardController extends Controller
             ])
             ->values();
 
+        $investmentsByCategory = $activeInvestments->groupBy(function ($investment) {
+            return optional($investment->plan)->roi_type ?? 'daily';
+        });
+
         // Money formatter passed to the dashboard view
         $formatMoney = function (?int $cents): string {
             $amount = ($cents ?? 0) / 100;
@@ -282,6 +297,17 @@ class DashboardController extends Controller
             'totalInvestedCents'     => $totalInvestedCents,
             'apyPortfolioCents'      => $apyPortfolioCents,
             'profitSeries'           => $profitSeries,
+            'categoryProfitCents'    => [
+                'daily' => $dailyCycleProfitCents,
+                'weekly' => $weeklyCycleProfitCents,
+                'apy' => $apyCycleProfitCents,
+            ],
+            'investmentsByCategory'  => $investmentsByCategory,
+            'categoryLabels'         => [
+                'daily' => 'Nexo Daily Yield',
+                'weekly' => 'Nexo Weekly Growth',
+                'apy'   => 'Nexo Managed Portfolios',
+            ],
         ]);
     }
     
