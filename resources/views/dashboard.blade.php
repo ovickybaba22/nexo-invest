@@ -472,7 +472,9 @@
                                 @php
                                     $plan = $summary['plan'] ?? null;
                                     $amountCents = $summary['total_amount_cents'] ?? 0;
-                                    $currentValueCents = $summary['current_value_cents'] ?? $amountCents;
+                                    $currentValueCents = $summary['computed_current_cents']
+                                        ?? $summary['current_value_cents']
+                                        ?? $amountCents;
                                     $profitCents = $summary['profit_cents'] ?? ($currentValueCents - $amountCents);
                                     $progress = min(100, max(0, $summary['progress_percent'] ?? 0));
                                     $profitPositive = $profitCents >= 0;
@@ -563,7 +565,9 @@
     @php
         $isArray = is_array($item);
 
-        $createdAt = $isArray ? ($item['created_at'] ?? null) : ($item->created_at ?? null);
+        $createdAt = $isArray
+            ? ($item['created_at'] ?? ($item['date'] ?? null))
+            : ($item->created_at ?? $item->date ?? null);
         $type = $isArray ? ($item['type'] ?? null) : ($item->type ?? null);
         $planName = $isArray
             ? ($item['plan_name'] ?? null)

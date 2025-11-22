@@ -16,28 +16,30 @@
                     </p>
 
                     @php
-                        $walletBalanceRaw = ($walletBalanceCents ?? 0) / 100;
-                        $walletBalanceUsd = number_format($walletBalanceRaw, 2);
+                        $availableBalanceRaw = ($availableBalanceCents ?? 0) / 100;
+                        $availableBalanceUsd = number_format($availableBalanceRaw, 2);
 
                         $minInvestRaw = isset($plan->min_deposit_cents)
                             ? ($plan->min_deposit_cents / 100)
                             : 0;
 
                         $minInvestUsd = number_format($minInvestRaw, 2);
+                        $maxInvestRaw = max($availableBalanceRaw, 0);
+                        $maxInvestUsd = number_format($maxInvestRaw, 2);
                     @endphp
 
                     <div class="mb-4 rounded-md bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
                         <p>
                             <span class="font-semibold">Available balance:</span>
                             <span class="text-emerald-600 dark:text-emerald-400">
-                                ${{ $walletBalanceUsd }}
+                                ${{ $availableBalanceUsd }}
                             </span>
                         </p>
 
                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             Minimum for this plan:
                             <span class="font-semibold">${{ $minInvestUsd }}</span>
-                            @if ($walletBalanceRaw < $minInvestRaw)
+                            @if ($availableBalanceRaw < $minInvestRaw)
                                 &mdash; you’ll need to top up before you can start this investment.
                             @endif
                         </p>
@@ -75,7 +77,7 @@
 
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 Min: ${{ $minInvestUsd }} &mdash;
-                                Max: ${{ number_format(max($walletBalanceRaw, 0), 2) }}
+                                Max: ${{ $maxInvestUsd }}
                                 based on your available balance.
                             </p>
                         </div>

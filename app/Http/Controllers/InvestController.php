@@ -6,6 +6,7 @@ use App\Models\Plan;
 use App\Models\Investment;
 use App\Models\Deposit;
 use App\Models\Withdrawal;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class InvestController extends Controller
@@ -27,12 +28,12 @@ class InvestController extends Controller
 
         $user = $request->user();
 
-        // Compute wallet balance for this user so they can see what they can invest
-        $walletBalanceCents = $this->calculateWalletBalanceCents($user->id);
+        // Use the same wallet calculation as the dashboard (deposits minus invested/withdrawals)
+        $availableBalanceCents = $this->calculateWalletBalanceCents($user->id);
 
         return view('invest.start', [
-            'plan'               => $plan,
-            'walletBalanceCents' => $walletBalanceCents,
+            'plan'                   => $plan,
+            'availableBalanceCents'  => $availableBalanceCents,
         ]);
     }
 
@@ -123,9 +124,12 @@ class InvestController extends Controller
      */
     protected function calculateWalletBalanceCents(int $userId): int
     {
+        $user = User::find($userId);
+        $userWalletCents = (int) round(($user->wallet_balance ?? 0) * 100);
+
         // Confirmed deposits (credited from NOWPayments)
         $confirmedDepositsCents = Deposit::where('user_id', $userId)
-            ->where('status', 'confirmed')
+            ->whereIn('status', ['confirmed', 'completed'])
             ->sum('amount_cents');
 
         // Active investments
@@ -144,7 +148,8 @@ class InvestController extends Controller
 
         // Wallet logic
         $walletBalanceCents = max(
-            $confirmedDepositsCents
+            $userWalletCents
+            + $confirmedDepositsCents
             - $totalInvestedCents
             - $approvedWithdrawalsCents
             - $pendingWithdrawalsCents,

@@ -22,11 +22,17 @@ class DashboardController extends Controller
             ->where('status', 'active')
             ->get();
 
+        // Add a computed current value (principal + accrued profit) so UI totals are consistent
+        $activeInvestments->transform(function ($inv) {
+            $inv->computed_current_cents = ($inv->amount_cents ?? 0) + ($inv->accrued_profit_cents ?? 0);
+            return $inv;
+        });
+
         // Total amount currently invested (portfolio)
         $totalInvestedCents = $activeInvestments->sum('amount_cents');
 
         // Current value (principal + accrued profit) for each active investment
-        $portfolioCurrentCents = $activeInvestments->sum('current_value_cents');
+        $portfolioCurrentCents = $activeInvestments->sum('computed_current_cents');
 
         // Total profit credited to date (lifetime)
         $lifetimeProfitCents = InvestmentProfitLog::where('user_id', $user->id)
@@ -114,6 +120,10 @@ class DashboardController extends Controller
 
         $availableToInvestCents = $walletBalanceCents;
 
+        // Portfolio value per business rule:
+        // portfolio = wallet balance + total invested principal + total profit credited
+        $portfolioValueCents = $walletBalanceCents + $totalInvestedCents + $totalProfitCents;
+
         // 6) Plans summary for "Your investment plans"
         $plansSummary = $activeInvestments
             ->groupBy('plan_id')
@@ -125,7 +135,7 @@ class DashboardController extends Controller
 
                 $totalAmountCents = $group->sum('amount_cents');
                 $currentValueCents = $group->sum(function ($investment) {
-                    return $investment->current_value_cents ?? $investment->amount_cents;
+                    return $investment->computed_current_cents ?? $investment->amount_cents;
                 });
                 $profitCents = $currentValueCents - $totalAmountCents;
 
@@ -139,6 +149,7 @@ class DashboardController extends Controller
                     'plan'                => $plan,
                     'total_amount_cents'  => $totalAmountCents,
                     'current_value_cents' => $currentValueCents,
+                    'computed_current_cents' => $currentValueCents,
                     'profit_cents'        => $profitCents,
                     'progress_percent'    => round($progressAverage ?? 0, 1),
                     'investment_count'    => $group->count(),
@@ -206,7 +217,7 @@ class DashboardController extends Controller
 
         $apyPortfolioCents = $activeInvestments
             ->filter(fn ($investment) => optional($investment->plan)->roi_type === 'apy')
-            ->sum(fn ($investment) => $investment->current_value_cents ?? $investment->amount_cents);
+            ->sum(fn ($investment) => $investment->computed_current_cents ?? $investment->amount_cents);
 
         $chartStart = $today->copy()->subDays(29);
         $profitSeries = InvestmentProfitLog::where('user_id', $user->id)
@@ -231,7 +242,7 @@ class DashboardController extends Controller
             return '$' . number_format($amount, 2);
         };
 
-        $totalBalanceCents = $portfolioBalanceCents + $walletBalanceCents;
+        $totalBalanceCents = $portfolioValueCents;
 
         // 9) Portfolio allocation per plan (for Core / Balanced / Growth chips)
         $allocation = collect();
@@ -248,7 +259,7 @@ class DashboardController extends Controller
                     $investment = $group->first();
                     $plan = $investment->plan;
 
-                    $planAmountCents = $group->sum('amount_cents');
+                    $planAmountCents = $group->sum('computed_current_cents');
                     $color = $colorPalette[$colorIndex % count($colorPalette)];
                     $colorIndex++;
 
@@ -262,26 +273,26 @@ class DashboardController extends Controller
                 ->sortByDesc('amount_cents')
                 ->values();
 
-// Ensure rounding keeps total at 100% by correcting last slice
-if ($allocation->isNotEmpty()) {
-    $percentSum = $allocation->sum('percent');
+            // Ensure rounding keeps total at 100% by correcting the last slice
+            if ($allocation->isNotEmpty()) {
+                $percentSum = $allocation->sum('percent');
 
-    if (abs($percentSum - 100) >= 0.1) {
-        // Work on a plain array so we can modify by index
-        $allocationArray = $allocation->toArray();
-        $lastIndex = count($allocationArray) - 1;
+                if (abs($percentSum - 100) >= 0.1) {
+                    // Work on a plain array so we can modify by index
+                    $allocationArray = $allocation->toArray();
+                    $lastIndex = count($allocationArray) - 1;
 
-        if ($lastIndex >= 0) {
-            $allocationArray[$lastIndex]['percent'] = round(
-                $allocationArray[$lastIndex]['percent'] + (100 - $percentSum),
-                1
-            );
-        }
+                    if ($lastIndex >= 0) {
+                        $allocationArray[$lastIndex]['percent'] = round(
+                            $allocationArray[$lastIndex]['percent'] + (100 - $percentSum),
+                            1
+                        );
+                    }
 
-        // Wrap back into a Collection so the view still gets a Collection
-        $allocation = collect($allocationArray);
-    }
-}
+                    // Wrap back into a Collection so the view still gets a Collection
+                    $allocation = collect($allocationArray);
+                }
+            }
         }
 
         return view('dashboard', [
@@ -291,10 +302,11 @@ if ($allocation->isNotEmpty()) {
             'activePlansCount'        => $activePlansCount,
             'pendingWithdrawalsCents' => $pendingWithdrawalsCents,
             'pendingWithdrawalCents'  => $pendingWithdrawalsCents,
+            'portfolioValueCents'     => $portfolioValueCents,
             'plansSummary'            => $plansSummary,
             'availablePlans'          => $availablePlans,
             'recentActivity'          => $recentActivity,
-'availableBalanceCents'   => $walletBalanceCents,
+            'availableBalanceCents'   => $walletBalanceCents,
             'availableToInvestCents'  => $availableToInvestCents,
             'formatMoney'             => $formatMoney, 
             'allocation'              => $allocation,

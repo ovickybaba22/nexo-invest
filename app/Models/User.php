@@ -67,5 +67,13 @@ public function getWithdrawableWalletCentsAttribute(): int
             'password' => 'hashed',
         ];
     }
-    
+
+    /**
+     * Alias for wallet_balance (stored in cents) so views/controllers
+     * can reference available_balance_cents consistently.
+     */
+    public function getAvailableBalanceCentsAttribute(): int
+    {
+        return (int) ($this->wallet_balance ?? 0);
+    }
 }
