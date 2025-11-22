@@ -294,7 +294,7 @@ if ($allocation->isNotEmpty()) {
             'plansSummary'            => $plansSummary,
             'availablePlans'          => $availablePlans,
             'recentActivity'          => $recentActivity,
-            'availableBalanceCents'   => $availableBalanceCents,
+'availableBalanceCents'   => $walletBalanceCents,
             'availableToInvestCents'  => $availableToInvestCents,
             'formatMoney'             => $formatMoney, 
             'allocation'              => $allocation,
