@@ -262,14 +262,26 @@ class DashboardController extends Controller
                 ->sortByDesc('amount_cents')
                 ->values();
 
-            // Ensure rounding keeps total at 100% by correcting last slice
-            $percentSum = $allocation->sum('percent');
-            if (abs($percentSum - 100) >= 0.1) {
-                $lastIndex = $allocation->count() - 1;
-                if ($lastIndex >= 0) {
-                    $allocation[$lastIndex]['percent'] = round($allocation[$lastIndex]['percent'] + (100 - $percentSum), 1);
-                }
-            }
+// Ensure rounding keeps total at 100% by correcting last slice
+if ($allocation->isNotEmpty()) {
+    $percentSum = $allocation->sum('percent');
+
+    if (abs($percentSum - 100) >= 0.1) {
+        // Work on a plain array so we can modify by index
+        $allocationArray = $allocation->toArray();
+        $lastIndex = count($allocationArray) - 1;
+
+        if ($lastIndex >= 0) {
+            $allocationArray[$lastIndex]['percent'] = round(
+                $allocationArray[$lastIndex]['percent'] + (100 - $percentSum),
+                1
+            );
+        }
+
+        // Wrap back into a Collection so the view still gets a Collection
+        $allocation = collect($allocationArray);
+    }
+}
         }
 
         return view('dashboard', [
