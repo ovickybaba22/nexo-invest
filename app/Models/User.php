@@ -10,6 +10,23 @@ use App\Models\Withdrawal;
 
 class User extends Authenticatable
 {
+    // Always expose wallet balance in cents, even if there is no DB column.
+    public function getWalletBalanceCentsAttribute(): int
+    {
+        return (int) round(($this->wallet_balance ?? 0) * 100);
+    }
+
+    // The app uses available_balance_cents for "Available to invest" / modal.
+    // Map it to the same wallet balance so all places stay in sync.
+    public function getAvailableBalanceCentsAttribute(): int
+    {
+        return $this->wallet_balance_cents;
+    }
+// Some places may use withdrawable_wallet_cents — keep it in sync too.
+public function getWithdrawableWalletCentsAttribute(): int
+{
+    return $this->wallet_balance_cents;
+}
     public function deposits()
 {
     return $this->hasMany(\App\Models\Deposit::class);
