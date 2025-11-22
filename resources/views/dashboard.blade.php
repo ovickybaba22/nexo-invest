@@ -1,12 +1,11 @@
 <x-app-layout>
     @php
-        use Illuminate\Support\Str;
-        // Money helper (same as before)
-        $formatMoney = $formatMoney ?? function (?int $cents): string {
-            $amount = ($cents ?? 0) / 100;
-            return '$' . number_format($amount, 2);
-        };
-    @endphp
+    // Money helper (same as before)
+    $formatMoney = $formatMoney ?? function (?int $cents): string {
+        $amount = ($cents ?? 0) / 100;
+        return '$' . number_format($amount, 2);
+    };
+@endphp
 
    
 
@@ -427,12 +426,18 @@
                                                 </td>
                                                 <td class="py-3 pr-4">{{ $principal }}</td>
                                                 <td class="py-3 pr-4 text-emerald-300">{{ $profit }}</td>
-                                                <td class="py-3 pr-4 text-slate-400">
-                                                    {{ optional($investment->last_payout_at ?? $investment->last_yield_at)?->timezone(config('app.timezone'))->format('M j, Y') ?? '—' }}
-                                                </td>
-                                                <td class="py-3 text-slate-100">
-                                                    {{ optional($investment->next_payout_at ?? $investment->next_yield_at)?->timezone(config('app.timezone'))->format('M j, Y') ?? 'Queued' }}
-                                                </td>
+<td class="py-3 pr-4 text-slate-400">
+@php
+    $lastDate = $investment->last_payout_at ?? $investment->last_yield_at;
+    $nextDate = $investment->next_payout_at ?? $investment->next_yield_at;
+@endphp
+
+<td class="px-4 py-3 text-xs text-slate-400">
+    {{ $lastDate ? $lastDate->timezone(config('app.timezone'))->format('M j, Y') : '—' }}
+</td>
+<td class="px-4 py-3 text-xs text-slate-400">
+    {{ $nextDate ? $nextDate->timezone(config('app.timezone'))->format('M j, Y') : 'Queued' }}
+</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
